@@ -616,9 +616,12 @@ function getHtmlPage() {
     }
     
     async function registerUser() {
+      console.log('registerUser called');
       const userId = document.getElementById('registerUserId').value;
       const email = document.getElementById('registerEmail').value;
       const password = document.getElementById('registerPassword').value;
+      
+      console.log('Registration form values:', {userId, email});
       
       if (!userId || !password) {
         alert('User ID and password are required');
@@ -631,12 +634,15 @@ function getHtmlPage() {
         if (email) formData.append('email', email);
         formData.append('password', password);
         
+        console.log('Sending registration request');
         const response = await fetch('/auth/register', {
           method: 'POST',
           body: formData
         });
         
+        console.log('Registration response:', response.status);
         const data = await response.json();
+        console.log('Registration response data:', data);
         
         if (data.success) {
           alert('Registration successful! You can now login.');
@@ -647,13 +653,17 @@ function getHtmlPage() {
           alert('Registration failed: ' + data.error);
         }
       } catch (error) {
+        console.error('Error registering user:', error);
         alert('Error registering user: ' + error.message);
       }
     }
     
     async function loginUser() {
+      console.log('loginUser called');
       const userId = document.getElementById('loginUserId').value;
       const password = document.getElementById('loginPassword').value;
+      
+      console.log('Login form values:', {userId});
       
       if (!userId || !password) {
         alert('User ID and password are required');
@@ -665,12 +675,15 @@ function getHtmlPage() {
         formData.append('userId', userId);
         formData.append('password', password);
         
+        console.log('Sending login request');
         const response = await fetch('/auth/login', {
           method: 'POST',
           body: formData
         });
         
+        console.log('Login response:', response.status);
         const data = await response.json();
+        console.log('Login response data:', data);
         
         if (data.success) {
           // Store user info in localStorage
@@ -685,6 +698,7 @@ function getHtmlPage() {
           alert('Login failed: ' + data.error);
         }
       } catch (error) {
+        console.error('Error logging in user:', error);
         alert('Error logging in user: ' + error.message);
       }
     }
@@ -697,14 +711,18 @@ function getHtmlPage() {
     }
     
     async function createUserMapping() {
+      console.log('createUserMapping called');
       if (!currentUser) {
         alert('Please login first');
+        console.log('User not logged in');
         return;
       }
       
       const targetUrl = document.getElementById('targetUrl').value;
       const userId = document.getElementById('userId').value;
       const customPath = document.getElementById('customPath').value;
+      
+      console.log('Form values:', {targetUrl, userId, customPath});
       
       if (!targetUrl) {
         alert('Please enter the target URL to map');
@@ -728,12 +746,15 @@ function getHtmlPage() {
         formData.append('userId', userId);
         formData.append('customPath', customPath);
         
+        console.log('Sending request to /api/create-user-mapping');
         const response = await fetch('/api/create-user-mapping', {
           method: 'POST',
           body: formData
         });
         
+        console.log('Response received:', response.status);
         const data = await response.json();
+        console.log('Response data:', data);
         
         if (data.success) {
           // Update the result section
@@ -751,13 +772,16 @@ function getHtmlPage() {
           alert('Error: ' + data.error);
         }
       } catch (error) {
+        console.error('Error creating user mapping:', error);
         alert('Error creating user mapping: ' + error.message);
       }
     }
     
     async function createPersistentText() {
+      console.log('createPersistentText called');
       if (!currentUser) {
         alert('Please login first');
+        console.log('User not logged in');
         return;
       }
       
@@ -765,6 +789,8 @@ function getHtmlPage() {
       const filename = document.getElementById('persistentFilename').value;
       const userId = document.getElementById('textUserId').value;
       const customPath = document.getElementById('textCustomPath').value;
+      
+      console.log('Form values:', {content: content?.substring(0, 50) + '...', filename, userId, customPath});
       
       if (!content) {
         alert('Please enter the content');
@@ -794,12 +820,15 @@ function getHtmlPage() {
         formData.append('userId', userId);
         formData.append('customPath', customPath);
         
+        console.log('Sending request to /api/create-persistent-text');
         const response = await fetch('/api/create-persistent-text', {
           method: 'POST',
           body: formData
         });
         
+        console.log('Response received:', response.status);
         const data = await response.json();
+        console.log('Response data:', data);
         
         if (data.success) {
           // Update the result section
@@ -817,6 +846,7 @@ function getHtmlPage() {
           alert('Error: ' + data.error);
         }
       } catch (error) {
+        console.error('Error creating persistent text:', error);
         alert('Error creating persistent text: ' + error.message);
       }
     }
