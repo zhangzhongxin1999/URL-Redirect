@@ -55,7 +55,9 @@ export async function onRequest({ params, request }) {
       'Content-Type': contentType,
       'Content-Disposition': `attachment; filename="${filename}"`,
       'Access-Control-Allow-Origin': '*',
-      'Cache-Control': 'no-cache',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
       'X-Content-Source': 'Dynamic-Text-File'
     }
   });

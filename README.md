@@ -117,7 +117,9 @@ https://your-site.pages.dev/text/data.json?b64=eyAiZGF0YSI6ICJleGFtcGxlIiwgIm51b
 - Uses Cloudflare Pages Functions to create dynamic routes at `/gist/*` and `/text/*`
 - Preserves original HTTP headers including content-type
 - Sets Content-Disposition header to force download with custom filename
-- Implements basic caching (1 hour) for Gist proxy, no cache for text converter
+- Implements caching strategies:
+  - Gist proxy: 15-minute cache (balance between performance and freshness)
+  - Text-to-URL converter: No cache (ensures fresh content for dynamic text)
 - Supports multiple content types based on file extensions
 - Logs requests for debugging purposes
 

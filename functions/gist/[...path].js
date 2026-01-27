@@ -58,13 +58,14 @@ export async function onRequest({ params, request }) {
     const finalFilename = customFilename || originalFilename || 'download';
     
     // Return the content with appropriate headers including content disposition
+    // Using a shorter cache time for Gist content as it might change
     return new Response(content, {
       status: 200,
       headers: {
         'Content-Type': contentType,
         'Content-Disposition': `attachment; filename="${finalFilename}"`,
         'Access-Control-Allow-Origin': '*',
-        'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
+        'Cache-Control': 'public, max-age=900', // Cache for 15 minutes
         'X-Proxy-Source': 'Cloudflare-Pages-Gist-Proxy'
       }
     });
