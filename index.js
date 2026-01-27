@@ -185,8 +185,18 @@ export default {
     }
     // Serve the main page
     else {
-      return new Response(`
-<!DOCTYPE html>
+      return new Response(getHtmlPage(), {
+        headers: {
+          'Content-Type': 'text/html',
+        }
+      });
+    }
+  }
+};
+
+// Separate function to return HTML content to avoid template string issues
+function getHtmlPage() {
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -549,7 +559,7 @@ export default {
       
       if (isAuthenticated && currentUser) {
         authStatusDiv.className = 'auth-status authenticated';
-        authStatusText.textContent = `Logged in as: ${currentUser.userId}`;
+        authStatusText.textContent = 'Logged in as: ' + currentUser.userId;
         logoutBtn.style.display = 'block';
         
         // Enable forms that require authentication
@@ -810,7 +820,7 @@ export default {
         new URL(url);
         
         // Generate QR code using the API
-        const qrCodeUrl = \`/qrcode/generate?url=\${encodeURIComponent(url)}\`;
+        const qrCodeUrl = '/qrcode/generate?url=' + encodeURIComponent(url);
         
         // Create an image element for the QR code
         const img = document.createElement('img');
@@ -848,7 +858,7 @@ export default {
       }
       
       try {
-        const response = await fetch(\`/api/user/\${encodeURIComponent(userId)}/mappings\`);
+        const response = await fetch('/api/user/' + encodeURIComponent(userId) + '/mappings');
         const data = await response.json();
         
         if (data.success) {
@@ -864,24 +874,23 @@ export default {
               
               let contentPreview = '';
               if (mapping.type === 'url_mapping') {
-                contentPreview = \`<strong>Type:</strong> URL Mapping<br>
-                                  <strong>Original URL:</strong> \${mapping.originalUrl}<br>\`;
+                contentPreview = '<strong>Type:</strong> URL Mapping<br>' +
+                                 '<strong>Original URL:</strong> ' + mapping.originalUrl + '<br>';
               } else if (mapping.type === 'text_content') {
-                contentPreview = \`<strong>Type:</strong> Text Content<br>
-                                  <strong>Filename:</strong> \${mapping.filename}<br>
-                                  <strong>Content Preview:</strong> \${mapping.contentPreview}<br>\`;
+                contentPreview = '<strong>Type:</strong> Text Content<br>' +
+                                 '<strong>Filename:</strong> ' + mapping.filename + '<br>' +
+                                 '<strong>Content Preview:</strong> ' + mapping.contentPreview + '<br>';
               }
               
-              mappingItem.innerHTML = \`
-                <div>
-                  <strong>Custom Path:</strong> \${mapping.customPath}<br>
-                  \${contentPreview}
-                  <strong>Created:</strong> \${new Date(mapping.createdAt).toLocaleString()}<br>
-                  <strong>Full Path:</strong> /m/\${userId}/\${mapping.customPath}<br>
-                  <a href="/m/\${userId}/\${mapping.customPath}" target="_blank">Open</a>
-                  <button class="delete-btn" onclick="deleteMapping('\${userId}', '\${mapping.customPath}')">Delete</button>
-                </div>
-              \`;
+              mappingItem.innerHTML = 
+                '<div>' +
+                  '<strong>Custom Path:</strong> ' + mapping.customPath + '<br>' +
+                  contentPreview +
+                  '<strong>Created:</strong> ' + new Date(mapping.createdAt).toLocaleString() + '<br>' +
+                  '<strong>Full Path:</strong> /m/' + userId + '/' + mapping.customPath + '<br>' +
+                  '<a href="/m/' + userId + '/' + mapping.customPath + '" target="_blank">Open</a>' +
+                  '<button class="delete-btn" onclick="deleteMapping(\'' + userId + '\', \'' + mapping.customPath + '\')">Delete</button>' +
+                '</div>';
               
               mappingsListDiv.appendChild(mappingItem);
             });
@@ -902,12 +911,12 @@ export default {
         return;
       }
       
-      if (!confirm(\`Are you sure you want to delete the mapping "\${customPath}" for user "\${userId}"?\`)) {
+      if (!confirm('Are you sure you want to delete the mapping "' + customPath + '" for user "' + userId + '"?')) {
         return;
       }
       
       try {
-        const response = await fetch(\`/api/user/\${encodeURIComponent(userId)}/mappings/\${encodeURIComponent(customPath)}/delete\`, {
+        const response = await fetch('/api/user/' + encodeURIComponent(userId) + '/mappings/' + encodeURIComponent(customPath) + '/delete', {
           method: 'DELETE'
         });
         
@@ -933,7 +942,7 @@ export default {
         const qrButton = document.createElement('button');
         qrButton.textContent = 'QR';
         qrButton.onclick = function() {
-          const qrCodeUrl = \`/qrcode/generate?url=\${encodeURIComponent(element.href)}\`;
+          const qrCodeUrl = '/qrcode/generate?url=' + encodeURIComponent(element.href);
           window.open(qrCodeUrl, '_blank', 'width=350,height=400');
         };
         qrButton.style.marginLeft = '10px';
@@ -941,668 +950,661 @@ export default {
         element.parentNode.appendChild(qrButton);
       }
     }
-    
-    // Helper functions for API endpoints
-    async function handleCreateUserMapping(request, env) {
-      if (request.method === 'OPTIONS') {
-        return handleCorsPreflight();
-      }
-      
-      if (request.method !== 'POST') {
-        return new Response('Method not allowed', { status: 405 });
-      }
-      
-      // Check if KV namespace is available
-      if (!env.URL_MAPPER_KV) {
-        return new Response(JSON.stringify({ 
-          error: 'KV namespace not configured. Please set up URL_MAPPER_KV in your environment.' 
-        }), {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
-      
-      try {
-        const formData = await request.formData();
-        const originalUrl = formData.get('originalUrl');
-        const userId = formData.get('userId');
-        const customPath = formData.get('customPath');
-        
-        if (!originalUrl) {
-          return new Response(JSON.stringify({ error: 'Original URL is required' }), {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-        
-        if (!userId) {
-          return new Response(JSON.stringify({ error: 'User ID is required' }), {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-        
-        if (!customPath) {
-          return new Response(JSON.stringify({ error: 'Custom path is required' }), {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-        
-        // Validate the original URL
-        try {
-          new URL(originalUrl);
-        } catch (e) {
-          return new Response(JSON.stringify({ error: 'Invalid original URL' }), {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-        
-        // Create the mapping key in the format: user:{userId}:path:{customPath}
-        const mappingKey = \`user:\${userId}:path:\${customPath}\`;
-        
-        // Check if this mapping already exists
-        const existingMapping = await env.URL_MAPPER_KV.get(mappingKey);
-        if (existingMapping) {
-          return new Response(JSON.stringify({ 
-            error: 'A mapping with this user ID and custom path already exists' 
-          }), {
-            status: 409, // Conflict
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-        
-        // Store the original URL in KV with the mapping key
-        const mappingData = {
-          originalUrl: originalUrl,
-          userId: userId,
-          customPath: customPath,
-          createdAt: new Date().toISOString(),
-          type: 'url_mapping'
-        };
-        
-        await env.URL_MAPPER_KV.put(mappingKey, JSON.stringify(mappingData));
-        
-        // Add this mapping to the user's list of mappings
-        // First get the current list of mappings for this user
-        const userMappingsListKey = \`user:\${userId}:mappings:list\`;
-        let userMappingsList = [];
-        const existingList = await env.URL_MAPPER_KV.get(userMappingsListKey);
-        if (existingList) {
-          userMappingsList = JSON.parse(existingList);
-        }
-        
-        // Add the new mapping to the list
-        userMappingsList.push({
-          mappingKey: mappingKey,
-          customPath: customPath,
-          createdAt: new Date().toISOString(),
-          type: 'url_mapping'
-        });
-        
-        // Update the user's list of mappings
-        await env.URL_MAPPER_KV.put(userMappingsListKey, JSON.stringify(userMappingsList));
-        
-        // Derive the base URL from the request
-        const url = new URL(request.url);
-        const baseUrl = \`\${url.protocol}//\${url.host}\`;
-        
-        // Create the mapped URL
-        const mappedUrl = \`\${baseUrl}/m/\${userId}/\${customPath}\`;
-        
-        return new Response(JSON.stringify({
-          success: true,
-          mappedUrl: mappedUrl,
-          mappingKey: mappingKey,
-          userId: userId,
-          customPath: customPath,
-          originalUrl: originalUrl,
-          message: 'User-defined mapping created successfully'
-        }), {
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
-          }
-        });
-      } catch (error) {
-        console.error('Error creating user mapping:', error);
-        return new Response(JSON.stringify({ error: error.message }), {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
-    }
-    
-    async function handleCreatePersistentText(request, env) {
-      if (request.method === 'OPTIONS') {
-        return handleCorsPreflight();
-      }
-      
-      if (request.method !== 'POST') {
-        return new Response('Method not allowed', { status: 405 });
-      }
-      
-      // Check if KV namespace is available
-      if (!env.URL_MAPPER_KV) {
-        return new Response(JSON.stringify({ 
-          error: 'KV namespace not configured. Please set up URL_MAPPER_KV in your environment.' 
-        }), {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
-      
-      try {
-        const formData = await request.formData();
-        const content = formData.get('content');
-        const filename = formData.get('filename') || 'text-content.txt';
-        const userId = formData.get('userId');
-        const customPath = formData.get('customPath');
-        
-        if (!content) {
-          return new Response(JSON.stringify({ error: 'Content is required' }), {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-        
-        if (!userId) {
-          return new Response(JSON.stringify({ error: 'User ID is required' }), {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-        
-        if (!customPath) {
-          return new Response(JSON.stringify({ error: 'Custom path is required' }), {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-        
-        // Determine content type based on file extension
-        let contentType = 'text/plain';
-        if (filename.endsWith('.json')) {
-          contentType = 'application/json';
-        } else if (filename.endsWith('.js')) {
-          contentType = 'application/javascript';
-        } else if (filename.endsWith('.css')) {
-          contentType = 'text/css';
-        } else if (filename.endsWith('.html') || filename.endsWith('.htm')) {
-          contentType = 'text/html';
-        } else if (filename.endsWith('.xml')) {
-          contentType = 'application/xml';
-        }
-        
-        // Create the mapping key in the format: user:{userId}:path:{customPath}
-        const mappingKey = \`user:\${userId}:path:\${customPath}\`;
-        
-        // Check if this mapping already exists
-        const existingMapping = await env.URL_MAPPER_KV.get(mappingKey);
-        if (existingMapping) {
-          return new Response(JSON.stringify({ 
-            error: 'A mapping with this user ID and customPath already exists' 
-          }), {
-            status: 409, // Conflict
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-        
-        // Store the content and metadata in KV with the mapping key
-        const storedData = {
-          content: content,
-          filename: filename,
-          contentType: contentType,
-          userId: userId,
-          customPath: customPath,
-          createdAt: new Date().toISOString(),
-          type: 'text_content'
-        };
-        
-        await env.URL_MAPPER_KV.put(mappingKey, JSON.stringify(storedData));
-        
-        // Add this mapping to the user's list of mappings
-        // First get the current list of mappings for this user
-        const userMappingsListKey = \`user:\${userId}:mappings:list\`;
-        let userMappingsList = [];
-        const existingList = await env.URL_MAPPER_KV.get(userMappingsListKey);
-        if (existingList) {
-          userMappingsList = JSON.parse(existingList);
-        }
-        
-        // Add the new mapping to the list
-        userMappingsList.push({
-          mappingKey: mappingKey,
-          customPath: customPath,
-          createdAt: new Date().toISOString(),
-          type: 'text_content'
-        });
-        
-        // Update the user's list of mappings
-        await env.URL_MAPPER_KV.put(userMappingsListKey, JSON.stringify(userMappingsList));
-        
-        // Derive the base URL from the request
-        const url = new URL(request.url);
-        const baseUrl = \`\${url.protocol}//\${url.host}\`;
-        
-        // Create the persistent URL
-        const persistentUrl = \`\${baseUrl}/m/\${userId}/\${customPath}\`;
-        
-        return new Response(JSON.stringify({
-          success: true,
-          persistentUrl: persistentUrl,
-          mappingKey: mappingKey,
-          userId: userId,
-          customPath: customPath,
-          filename: filename,
-          contentType: contentType,
-          message: 'User-defined text content mapping created successfully'
-        }), {
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
-          }
-        });
-      } catch (error) {
-        console.error('Error creating user-defined text content:', error);
-        return new Response(JSON.stringify({ error: error.message }), {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
-    }
-    
-    async function handleGetUserMappings(request, env, path) {
-      if (request.method === 'OPTIONS') {
-        return handleCorsPreflight();
-      }
-      
-      // Extract userId from the path: /api/user/{userId}/mappings
-      const pathParts = path.split('/');
-      if (pathParts.length < 5 || pathParts[3] !== 'user' || pathParts[5] !== 'mappings') {
-        return new Response(JSON.stringify({ error: 'Invalid path format' }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
-      
-      const userId = pathParts[4];
-      
-      if (!userId) {
-        return new Response(JSON.stringify({ error: 'User ID is required' }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
-      
-      try {
-        // Get the user's list of mappings
-        const userMappingsListKey = \`user:\${userId}:mappings:list\`;
-        const userMappingsListJson = await env.URL_MAPPER_KV.get(userMappingsListKey);
-        
-        if (!userMappingsListJson) {
-          return new Response(JSON.stringify({
-            success: true,
-            mappings: [],
-            message: 'No mappings found for this user'
-          }), {
-            headers: {
-              'Content-Type': 'application/json',
-              'Access-Control-Allow-Origin': '*'
-            }
-          });
-        }
-        
-        const userMappingsList = JSON.parse(userMappingsListJson);
-        
-        // Get detailed information for each mapping
-        const detailedMappings = [];
-        for (const mappingRef of userMappingsList) {
-          const mappingDataJson = await env.URL_MAPPER_KV.get(mappingRef.mappingKey);
-          if (mappingDataJson) {
-            const mappingData = JSON.parse(mappingDataJson);
-            
-            let contentPreview = '';
-            if (mappingData.type === 'url_mapping') {
-              // Limit the preview length
-              contentPreview = mappingData.originalUrl.length > 100 ? 
-                mappingData.originalUrl.substring(0, 100) + '...' : 
-                mappingData.originalUrl;
-            } else if (mappingData.type === 'text_content') {
-              // Limit the preview length
-              contentPreview = mappingData.content.length > 100 ? 
-                mappingData.content.substring(0, 100) + '...' : 
-                mappingData.content.substring(0, Math.min(100, mappingData.content.length));
-            }
-            
-            detailedMappings.push({
-              ...mappingData,
-              contentPreview: contentPreview,
-              mappingKey: mappingRef.mappingKey,
-              createdAt: mappingRef.createdAt
-            });
-          }
-        }
-        
-        return new Response(JSON.stringify({
-          success: true,
-          mappings: detailedMappings,
-          count: detailedMappings.length
-        }), {
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
-          }
-        });
-      } catch (error) {
-        console.error('Error fetching user mappings:', error);
-        return new Response(JSON.stringify({ error: error.message }), {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
-    }
-    
-    async function handleDeleteUserMapping(request, env, path) {
-      if (request.method === 'OPTIONS') {
-        return handleCorsPreflight();
-      }
-      
-      // Extract userId and customPath from the path: /api/user/{userId}/mappings/{customPath}/delete
-      const pathParts = path.split('/');
-      if (pathParts.length < 7 || pathParts[3] !== 'user' || pathParts[5] !== 'mappings' || pathParts[6] === 'delete') {
-        // Handle the case where 'delete' is part of the customPath
-        if (pathParts[pathParts.length - 1] === 'delete') {
-          const userId = pathParts[4];
-          const customPath = pathParts.slice(5, pathParts.length - 1).join('/'); // Everything between 'mappings' and 'delete'
-          
-          return performDelete(env, userId, customPath);
-        } else {
-          return new Response(JSON.stringify({ error: 'Invalid path format' }), {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-      }
-      
-      const userId = pathParts[4];
-      const customPath = pathParts[6]; // The path part after 'mappings'
-      
-      return performDelete(env, userId, customPath);
-    }
-    
-    async function performDelete(env, userId, customPath) {
-      if (!userId || !customPath) {
-        return new Response(JSON.stringify({ error: 'User ID and custom path are required' }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
-      
-      try {
-        // Create the mapping key in the format: user:{userId}:path:{customPath}
-        const mappingKey = \`user:\${userId}:path:\${customPath}\`;
-        
-        // Check if the mapping exists
-        const existingMapping = await env.URL_MAPPER_KV.get(mappingKey);
-        if (!existingMapping) {
-          return new Response(JSON.stringify({ error: 'Mapping not found' }), {
-            status: 404,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-        
-        // Delete the mapping
-        await env.URL_MAPPER_KV.delete(mappingKey);
-        
-        // Remove the mapping from the user's list
-        const userMappingsListKey = \`user:\${userId}:mappings:list\`;
-        const userMappingsListJson = await env.URL_MAPPER_KV.get(userMappingsListKey);
-        
-        if (userMappingsListJson) {
-          let userMappingsList = JSON.parse(userMappingsListJson);
-          
-          // Filter out the mapping that was deleted
-          userMappingsList = userMappingsList.filter(item => item.mappingKey !== mappingKey);
-          
-          // Update the user's list of mappings
-          await env.URL_MAPPER_KV.put(userMappingsListKey, JSON.stringify(userMappingsList));
-        }
-        
-        return new Response(JSON.stringify({
-          success: true,
-          message: 'Mapping deleted successfully'
-        }), {
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
-          }
-        });
-      } catch (error) {
-        console.error('Error deleting user mapping:', error);
-        return new Response(JSON.stringify({ error: error.message }), {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
-    }
-    
-    async function handleRegister(request, env) {
-      if (request.method === 'OPTIONS') {
-        return handleCorsPreflight();
-      }
-      
-      if (request.method !== 'POST') {
-        return new Response('Method not allowed', { status: 405 });
-      }
-      
-      try {
-        const formData = await request.formData();
-        const userId = formData.get('userId');
-        const email = formData.get('email');
-        const password = formData.get('password');
-        
-        if (!userId || !password) {
-          return new Response(JSON.stringify({ error: 'User ID and password are required' }), {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-        
-        // Validate userId format (only alphanumeric, hyphens, and underscores)
-        if (!/^[a-zA-Z0-9_-]+$/.test(userId)) {
-          return new Response(JSON.stringify({ error: 'User ID can only contain letters, numbers, hyphens, and underscores' }), {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-        
-        // Check if user already exists
-        const userExists = await env.URL_MAPPER_KV.get(`user:${userId}:profile`);
-        if (userExists) {
-          return new Response(JSON.stringify({ error: 'User ID already exists' }), {
-            status: 409,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-        
-        // Hash the password (using a simple approach for now)
-        const hashedPassword = await hashPassword(password);
-        
-        // Store user profile
-        const userProfile = {
-          userId: userId,
-          email: email || null,
-          createdAt: new Date().toISOString(),
-          lastLoginAt: new Date().toISOString()
-        };
-        
-        await env.URL_MAPPER_KV.put(`user:${userId}:profile`, JSON.stringify(userProfile));
-        
-        // Store user credentials
-        const userCredentials = {
-          userId: userId,
-          hashedPassword: hashedPassword,
-          updatedAt: new Date().toISOString()
-        };
-        
-        await env.URL_MAPPER_KV.put(`user:${userId}:credentials`, JSON.stringify(userCredentials));
-        
-        return new Response(JSON.stringify({
-          success: true,
-          message: 'User registered successfully',
-          userId: userId
-        }), {
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
-          }
-        });
-      } catch (error) {
-        console.error('Error registering user:', error);
-        return new Response(JSON.stringify({ error: error.message }), {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
-    }
-    
-    async function handleLogin(request, env) {
-      if (request.method === 'OPTIONS') {
-        return handleCorsPreflight();
-      }
-      
-      if (request.method !== 'POST') {
-        return new Response('Method not allowed', { status: 405 });
-      }
-      
-      try {
-        const formData = await request.formData();
-        const userId = formData.get('userId');
-        const password = formData.get('password');
-        
-        if (!userId || !password) {
-          return new Response(JSON.stringify({ error: 'User ID and password are required' }), {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-        
-        // Get stored credentials
-        const storedCredentialsJson = await env.URL_MAPPER_KV.get(`user:${userId}:credentials`);
-        if (!storedCredentialsJson) {
-          return new Response(JSON.stringify({ error: 'Invalid credentials' }), {
-            status: 401,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-        
-        const storedCredentials = JSON.parse(storedCredentialsJson);
-        const hashedInputPassword = await hashPassword(password);
-        
-        // Compare passwords
-        if (storedCredentials.hashedPassword !== hashedInputPassword) {
-          return new Response(JSON.stringify({ error: 'Invalid credentials' }), {
-            status: 401,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-        
-        // Update last login time
-        const userProfileJson = await env.URL_MAPPER_KV.get(`user:${userId}:profile`);
-        if (userProfileJson) {
-          const userProfile = JSON.parse(userProfileJson);
-          userProfile.lastLoginAt = new Date().toISOString();
-          await env.URL_MAPPER_KV.put(`user:${userId}:profile`, JSON.stringify(userProfile));
-        }
-        
-        return new Response(JSON.stringify({
-          success: true,
-          message: 'Login successful',
-          userId: userId
-        }), {
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
-          }
-        });
-      } catch (error) {
-        console.error('Error logging in user:', error);
-        return new Response(JSON.stringify({ error: error.message }), {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
-    }
-    
-    async function hashPassword(password) {
-      // Simple hashing using Web Crypto API (in a real app, use a more secure method)
-      const encoder = new TextEncoder();
-      const data = encoder.encode(password);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-    
-    async function handleQrCodeGeneration(request) {
-      if (request.method === 'OPTIONS') {
-        return handleCorsPreflight();
-      }
-      
-      const url = new URL(request.url);
-      const targetUrl = url.searchParams.get('url');
-      
-      if (!targetUrl) {
-        return new Response('URL parameter is required', {
-          status: 400,
-          headers: { 'Content-Type': 'text/plain' }
-        });
-      }
-      
-      try {
-        // Generate a QR code URL using a public QR code API
-        // Note: In a production environment, you might want to generate QR codes directly in the worker
-        const qrApiUrl = \`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=\${encodeURIComponent(targetUrl)}\`;
-        const qrResponse = await fetch(qrApiUrl);
-        
-        if (!qrResponse.ok) {
-          throw new Error('Failed to generate QR code');
-        }
-        
-        return new Response(qrResponse.body, {
-          headers: {
-            'Content-Type': 'image/png',
-            'Access-Control-Allow-Origin': '*'
-          }
-        });
-      } catch (error) {
-        console.error('Error generating QR code:', error);
-        return new Response('Error generating QR code', {
-          status: 500,
-          headers: { 'Content-Type': 'text/plain' }
-        });
-      }
-    }
-    
-    function handleCorsPreflight() {
-      return new Response(null, {
-        status: 204,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
-        },
-      });
-    }
   </script>
 </body>
-</html>
-      `, {
+</html>`;
+}
+
+// Helper functions for API endpoints
+async function handleCreateUserMapping(request, env) {
+  if (request.method === 'OPTIONS') {
+    return handleCorsPreflight();
+  }
+  
+  if (request.method !== 'POST') {
+    return new Response('Method not allowed', { status: 405 });
+  }
+  
+  // Check if KV namespace is available
+  if (!env.URL_MAPPER_KV) {
+    return new Response(JSON.stringify({ 
+      error: 'KV namespace not configured. Please set up URL_MAPPER_KV in your environment.' 
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+  
+  try {
+    const formData = await request.formData();
+    const originalUrl = formData.get('originalUrl');
+    const userId = formData.get('userId');
+    const customPath = formData.get('customPath');
+    
+    if (!originalUrl) {
+      return new Response(JSON.stringify({ error: 'Original URL is required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    if (!userId) {
+      return new Response(JSON.stringify({ error: 'User ID is required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    if (!customPath) {
+      return new Response(JSON.stringify({ error: 'Custom path is required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Validate the original URL
+    try {
+      new URL(originalUrl);
+    } catch (e) {
+      return new Response(JSON.stringify({ error: 'Invalid original URL' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Create the mapping key in the format: user:{userId}:path:{customPath}
+    const mappingKey = \`user:\${userId}:path:\${customPath}\`;
+    
+    // Check if this mapping already exists
+    const existingMapping = await env.URL_MAPPER_KV.get(mappingKey);
+    if (existingMapping) {
+      return new Response(JSON.stringify({ 
+        error: 'A mapping with this user ID and custom path already exists' 
+      }), {
+        status: 409, // Conflict
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Store the original URL in KV with the mapping key
+    const mappingData = {
+      originalUrl: originalUrl,
+      userId: userId,
+      customPath: customPath,
+      createdAt: new Date().toISOString(),
+      type: 'url_mapping'
+    };
+    
+    await env.URL_MAPPER_KV.put(mappingKey, JSON.stringify(mappingData));
+    
+    // Add this mapping to the user's list of mappings
+    // First get the current list of mappings for this user
+    const userMappingsListKey = \`user:\${userId}:mappings:list\`;
+    let userMappingsList = [];
+    const existingList = await env.URL_MAPPER_KV.get(userMappingsListKey);
+    if (existingList) {
+      userMappingsList = JSON.parse(existingList);
+    }
+    
+    // Add the new mapping to the list
+    userMappingsList.push({
+      mappingKey: mappingKey,
+      customPath: customPath,
+      createdAt: new Date().toISOString(),
+      type: 'url_mapping'
+    });
+    
+    // Update the user's list of mappings
+    await env.URL_MAPPER_KV.put(userMappingsListKey, JSON.stringify(userMappingsList));
+    
+    // Derive the base URL from the request
+    const url = new URL(request.url);
+    const baseUrl = \`\${url.protocol}//\${url.host}\`;
+    
+    // Create the mapped URL
+    const mappedUrl = \`\${baseUrl}/m/\${userId}/\${customPath}\`;
+    
+    return new Response(JSON.stringify({
+      success: true,
+      mappedUrl: mappedUrl,
+      mappingKey: mappingKey,
+      userId: userId,
+      customPath: customPath,
+      originalUrl: originalUrl,
+      message: 'User-defined mapping created successfully'
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
+  } catch (error) {
+    console.error('Error creating user mapping:', error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+async function handleCreatePersistentText(request, env) {
+  if (request.method === 'OPTIONS') {
+    return handleCorsPreflight();
+  }
+  
+  if (request.method !== 'POST') {
+    return new Response('Method not allowed', { status: 405 });
+  }
+  
+  // Check if KV namespace is available
+  if (!env.URL_MAPPER_KV) {
+    return new Response(JSON.stringify({ 
+      error: 'KV namespace not configured. Please set up URL_MAPPER_KV in your environment.' 
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+  
+  try {
+    const formData = await request.formData();
+    const content = formData.get('content');
+    const filename = formData.get('filename') || 'text-content.txt';
+    const userId = formData.get('userId');
+    const customPath = formData.get('customPath');
+    
+    if (!content) {
+      return new Response(JSON.stringify({ error: 'Content is required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    if (!userId) {
+      return new Response(JSON.stringify({ error: 'User ID is required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    if (!customPath) {
+      return new Response(JSON.stringify({ error: 'Custom path is required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Determine content type based on file extension
+    let contentType = 'text/plain';
+    if (filename.endsWith('.json')) {
+      contentType = 'application/json';
+    } else if (filename.endsWith('.js')) {
+      contentType = 'application/javascript';
+    } else if (filename.endsWith('.css')) {
+      contentType = 'text/css';
+    } else if (filename.endsWith('.html') || filename.endsWith('.htm')) {
+      contentType = 'text/html';
+    } else if (filename.endsWith('.xml')) {
+      contentType = 'application/xml';
+    }
+    
+    // Create the mapping key in the format: user:{userId}:path:{customPath}
+    const mappingKey = \`user:\${userId}:path:\${customPath}\`;
+    
+    // Check if this mapping already exists
+    const existingMapping = await env.URL_MAPPER_KV.get(mappingKey);
+    if (existingMapping) {
+      return new Response(JSON.stringify({ 
+        error: 'A mapping with this user ID and customPath already exists' 
+      }), {
+        status: 409, // Conflict
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Store the content and metadata in KV with the mapping key
+    const storedData = {
+      content: content,
+      filename: filename,
+      contentType: contentType,
+      userId: userId,
+      customPath: customPath,
+      createdAt: new Date().toISOString(),
+      type: 'text_content'
+    };
+    
+    await env.URL_MAPPER_KV.put(mappingKey, JSON.stringify(storedData));
+    
+    // Add this mapping to the user's list of mappings
+    // First get the current list of mappings for this user
+    const userMappingsListKey = \`user:\${userId}:mappings:list\`;
+    let userMappingsList = [];
+    const existingList = await env.URL_MAPPER_KV.get(userMappingsListKey);
+    if (existingList) {
+      userMappingsList = JSON.parse(existingList);
+    }
+    
+    // Add the new mapping to the list
+    userMappingsList.push({
+      mappingKey: mappingKey,
+      customPath: customPath,
+      createdAt: new Date().toISOString(),
+      type: 'text_content'
+    });
+    
+    // Update the user's list of mappings
+    await env.URL_MAPPER_KV.put(userMappingsListKey, JSON.stringify(userMappingsList));
+    
+    // Derive the base URL from the request
+    const url = new URL(request.url);
+    const baseUrl = \`\${url.protocol}//\${url.host}\`;
+    
+    // Create the persistent URL
+    const persistentUrl = \`\${baseUrl}/m/\${userId}/\${customPath}\`;
+    
+    return new Response(JSON.stringify({
+      success: true,
+      persistentUrl: persistentUrl,
+      mappingKey: mappingKey,
+      userId: userId,
+      customPath: customPath,
+      filename: filename,
+      contentType: contentType,
+      message: 'User-defined text content mapping created successfully'
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
+  } catch (error) {
+    console.error('Error creating user-defined text content:', error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+async function handleGetUserMappings(request, env, path) {
+  if (request.method === 'OPTIONS') {
+    return handleCorsPreflight();
+  }
+  
+  // Extract userId from the path: /api/user/{userId}/mappings
+  const pathParts = path.split('/');
+  if (pathParts.length < 5 || pathParts[3] !== 'user' || pathParts[5] !== 'mappings') {
+    return new Response(JSON.stringify({ error: 'Invalid path format' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+  
+  const userId = pathParts[4];
+  
+  if (!userId) {
+    return new Response(JSON.stringify({ error: 'User ID is required' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+  
+  try {
+    // Get the user's list of mappings
+    const userMappingsListKey = \`user:\${userId}:mappings:list\`;
+    const userMappingsListJson = await env.URL_MAPPER_KV.get(userMappingsListKey);
+    
+    if (!userMappingsListJson) {
+      return new Response(JSON.stringify({
+        success: true,
+        mappings: [],
+        message: 'No mappings found for this user'
+      }), {
         headers: {
-          'Content-Type': 'text/html',
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
         }
+      });
+    }
+    
+    const userMappingsList = JSON.parse(userMappingsListJson);
+    
+    // Get detailed information for each mapping
+    const detailedMappings = [];
+    for (const mappingRef of userMappingsList) {
+      const mappingDataJson = await env.URL_MAPPER_KV.get(mappingRef.mappingKey);
+      if (mappingDataJson) {
+        const mappingData = JSON.parse(mappingDataJson);
+        
+        let contentPreview = '';
+        if (mappingData.type === 'url_mapping') {
+          // Limit the preview length
+          contentPreview = mappingData.originalUrl.length > 100 ? 
+            mappingData.originalUrl.substring(0, 100) + '...' : 
+            mappingData.originalUrl;
+        } else if (mappingData.type === 'text_content') {
+          // Limit the preview length
+          contentPreview = mappingData.content.length > 100 ? 
+            mappingData.content.substring(0, 100) + '...' : 
+            mappingData.content.substring(0, Math.min(100, mappingData.content.length));
+        }
+        
+        detailedMappings.push({
+          ...mappingData,
+          contentPreview: contentPreview,
+          mappingKey: mappingRef.mappingKey,
+          createdAt: mappingRef.createdAt
+        });
+      }
+    }
+    
+    return new Response(JSON.stringify({
+      success: true,
+      mappings: detailedMappings,
+      count: detailedMappings.length
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching user mappings:', error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+async function handleDeleteUserMapping(request, env, path) {
+  if (request.method === 'OPTIONS') {
+    return handleCorsPreflight();
+  }
+  
+  // Extract userId and customPath from the path: /api/user/{userId}/mappings/{customPath}/delete
+  const pathParts = path.split('/');
+  if (pathParts.length < 7 || pathParts[3] !== 'user' || pathParts[5] !== 'mappings' || pathParts[6] === 'delete') {
+    // Handle the case where 'delete' is part of the customPath
+    if (pathParts[pathParts.length - 1] === 'delete') {
+      const userId = pathParts[4];
+      const customPath = pathParts.slice(5, pathParts.length - 1).join('/'); // Everything between 'mappings' and 'delete'
+      
+      return performDelete(env, userId, customPath);
+    } else {
+      return new Response(JSON.stringify({ error: 'Invalid path format' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
       });
     }
   }
-};
+  
+  const userId = pathParts[4];
+  const customPath = pathParts[6]; // The path part after 'mappings'
+  
+  return performDelete(env, userId, customPath);
+}
+
+async function performDelete(env, userId, customPath) {
+  if (!userId || !customPath) {
+    return new Response(JSON.stringify({ error: 'User ID and custom path are required' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+  
+  try {
+    // Create the mapping key in the format: user:{userId}:path:{customPath}
+    const mappingKey = \`user:\${userId}:path:\${customPath}\`;
+    
+    // Check if the mapping exists
+    const existingMapping = await env.URL_MAPPER_KV.get(mappingKey);
+    if (!existingMapping) {
+      return new Response(JSON.stringify({ error: 'Mapping not found' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Delete the mapping
+    await env.URL_MAPPER_KV.delete(mappingKey);
+    
+    // Remove the mapping from the user's list
+    const userMappingsListKey = \`user:\${userId}:mappings:list\`;
+    const userMappingsListJson = await env.URL_MAPPER_KV.get(userMappingsListKey);
+    
+    if (userMappingsListJson) {
+      let userMappingsList = JSON.parse(userMappingsListJson);
+      
+      // Filter out the mapping that was deleted
+      userMappingsList = userMappingsList.filter(item => item.mappingKey !== mappingKey);
+      
+      // Update the user's list of mappings
+      await env.URL_MAPPER_KV.put(userMappingsListKey, JSON.stringify(userMappingsList));
+    }
+    
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'Mapping deleted successfully'
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
+  } catch (error) {
+    console.error('Error deleting user mapping:', error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+async function handleRegister(request, env) {
+  if (request.method === 'OPTIONS') {
+    return handleCorsPreflight();
+  }
+  
+  if (request.method !== 'POST') {
+    return new Response('Method not allowed', { status: 405 });
+  }
+  
+  try {
+    const formData = await request.formData();
+    const userId = formData.get('userId');
+    const email = formData.get('email');
+    const password = formData.get('password');
+    
+    if (!userId || !password) {
+      return new Response(JSON.stringify({ error: 'User ID and password are required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Validate userId format (only alphanumeric, hyphens, and underscores)
+    if (!/^[a-zA-Z0-9_-]+$/.test(userId)) {
+      return new Response(JSON.stringify({ error: 'User ID can only contain letters, numbers, hyphens, and underscores' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Check if user already exists
+    const userExists = await env.URL_MAPPER_KV.get(\`user:\${userId}:profile\`);
+    if (userExists) {
+      return new Response(JSON.stringify({ error: 'User ID already exists' }), {
+        status: 409,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Hash the password (using a simple approach for now)
+    const hashedPassword = await hashPassword(password);
+    
+    // Store user profile
+    const userProfile = {
+      userId: userId,
+      email: email || null,
+      createdAt: new Date().toISOString(),
+      lastLoginAt: new Date().toISOString()
+    };
+    
+    await env.URL_MAPPER_KV.put(\`user:\${userId}:profile\`, JSON.stringify(userProfile));
+    
+    // Store user credentials
+    const userCredentials = {
+      userId: userId,
+      hashedPassword: hashedPassword,
+      updatedAt: new Date().toISOString()
+    };
+    
+    await env.URL_MAPPER_KV.put(\`user:\${userId}:credentials\`, JSON.stringify(userCredentials));
+    
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'User registered successfully',
+      userId: userId
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
+  } catch (error) {
+    console.error('Error registering user:', error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+async function handleLogin(request, env) {
+  if (request.method === 'OPTIONS') {
+    return handleCorsPreflight();
+  }
+  
+  if (request.method !== 'POST') {
+    return new Response('Method not allowed', { status: 405 });
+  }
+  
+  try {
+    const formData = await request.formData();
+    const userId = formData.get('userId');
+    const password = formData.get('password');
+    
+    if (!userId || !password) {
+      return new Response(JSON.stringify({ error: 'User ID and password are required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Get stored credentials
+    const storedCredentialsJson = await env.URL_MAPPER_KV.get(\`user:\${userId}:credentials\`);
+    if (!storedCredentialsJson) {
+      return new Response(JSON.stringify({ error: 'Invalid credentials' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    const storedCredentials = JSON.parse(storedCredentialsJson);
+    const hashedInputPassword = await hashPassword(password);
+    
+    // Compare passwords
+    if (storedCredentials.hashedPassword !== hashedInputPassword) {
+      return new Response(JSON.stringify({ error: 'Invalid credentials' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Update last login time
+    const userProfileJson = await env.URL_MAPPER_KV.get(\`user:\${userId}:profile\`);
+    if (userProfileJson) {
+      const userProfile = JSON.parse(userProfileJson);
+      userProfile.lastLoginAt = new Date().toISOString();
+      await env.URL_MAPPER_KV.put(\`user:\${userId}:profile\`, JSON.stringify(userProfile));
+    }
+    
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'Login successful',
+      userId: userId
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
+  } catch (error) {
+    console.error('Error logging in user:', error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+async function hashPassword(password) {
+  // Simple hashing using Web Crypto API (in a real app, use a more secure method)
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function handleQrCodeGeneration(request) {
+  if (request.method === 'OPTIONS') {
+    return handleCorsPreflight();
+  }
+  
+  const url = new URL(request.url);
+  const targetUrl = url.searchParams.get('url');
+  
+  if (!targetUrl) {
+    return new Response('URL parameter is required', {
+      status: 400,
+      headers: { 'Content-Type': 'text/plain' }
+    });
+  }
+  
+  try {
+    // Generate a QR code URL using a public QR code API
+    // Note: In a production environment, you might want to generate QR codes directly in the worker
+    const qrApiUrl = \`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=\${encodeURIComponent(targetUrl)}\`;
+    const qrResponse = await fetch(qrApiUrl);
+    
+    if (!qrResponse.ok) {
+      throw new Error('Failed to generate QR code');
+    }
+    
+    return new Response(qrResponse.body, {
+      headers: {
+        'Content-Type': 'image/png',
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
+  } catch (error) {
+    console.error('Error generating QR code:', error);
+    return new Response('Error generating QR code', {
+      status: 500,
+      headers: { 'Content-Type': 'text/plain' }
+    });
+  }
+}
+
+function handleCorsPreflight() {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+  });
+}
