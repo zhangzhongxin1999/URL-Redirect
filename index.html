@@ -178,34 +178,6 @@
       </div>
     </div>
     
-    <div class="url-generator">
-      <h2>🔗 URL 生成器</h2>
-      <p>生成直接链接以将您的文本内容下载为文件：</p>
-      
-      <div class="form-group">
-        <label for="content">内容：</label>
-        <textarea id="content" placeholder="在此输入您的文本内容..."></textarea>
-      </div>
-      
-      <div class="form-group">
-        <label for="filename">文件名（带扩展名）：</label>
-        <input type="text" id="filename" value="config.txt" placeholder="例如：config.json, script.js">
-      </div>
-      
-      <div class="form-group">
-        <label for="siteUrl">您的网站URL：</label>
-        <input type="url" id="siteUrl" value="https://your-site.pages.dev" placeholder="例如：https://your-site.pages.dev">
-      </div>
-      
-      <button onclick="generateUrl()">生成临时URL</button>
-      
-      <div id="result" class="result">
-        <p><strong>生成的临时URL：</strong></p>
-        <p>常规: <a id="regularUrl" href="#" target="_blank"></a></p>
-        <p>Base64: <a id="base64Url" href="#" target="_blank"></a></p>
-      </div>
-    </div>
-    
     <div class="persistent-text-generator">
       <h2>💾 持久化文本URL生成器</h2>
       <p>创建持久化的文本内容，通过唯一ID访问：</p>
@@ -236,6 +208,34 @@
         <p><strong>持久化文本URL：</strong></p>
         <p><a id="persistentTextUrl" href="#" target="_blank"></a></p>
         <p>ID: <span id="persistentTextIdDisplay"></span></p>
+      </div>
+    </div>
+    
+    <div class="url-mapper">
+      <h2>🔄 持久化URL映射</h2>
+      <p>创建持久化的URL映射，通过唯一ID访问：</p>
+      
+      <div class="form-group">
+        <label for="persistentOriginalUrl">要映射的原始URL：</label>
+        <input type="url" id="persistentOriginalUrl" placeholder="例如：https://example.com/data.json">
+      </div>
+      
+      <div class="form-group">
+        <label for="customMapId">自定义映射ID（可选）：</label>
+        <input type="text" id="customMapId" placeholder="留空以自动生成ID">
+      </div>
+      
+      <div class="form-group">
+        <label for="persistentSiteUrl">您的网站URL：</label>
+        <input type="url" id="persistentSiteUrl" value="https://your-site.pages.dev" placeholder="例如：https://your-site.pages.dev">
+      </div>
+      
+      <button onclick="createPersistentMap()">创建持久化映射</button>
+      
+      <div id="persistentResult" class="result">
+        <p><strong>持久化映射URL：</strong></p>
+        <p><a id="persistentUrl" href="#" target="_blank"></a></p>
+        <p>映射ID: <span id="mapIdDisplay"></span></p>
       </div>
     </div>
     
@@ -389,38 +389,6 @@
       }
     }
     
-    async function generateMappedUrl() {
-      const originalUrl = document.getElementById('originalUrl').value;
-      const siteUrl = document.getElementById('mappedSiteUrl').value;
-      
-      if (!originalUrl) {
-        alert('Please enter the original URL to map');
-        return;
-      }
-      
-      if (!siteUrl) {
-        alert('Please enter your site URL');
-        return;
-      }
-      
-      try {
-        // Create a mapping using the URL encoding approach
-        const encodedUrl = btoa(encodeURIComponent(originalUrl));
-        const paramBasedUrl = `${siteUrl}/proxy-direct?url=${encodeURIComponent(originalUrl)}`;
-        const encodedUrlBased = `${siteUrl}/proxy/${encodedUrl}`;
-        
-        // Update the result section
-        document.getElementById('paramUrl').href = paramBasedUrl;
-        document.getElementById('paramUrl').textContent = paramBasedUrl;
-        document.getElementById('encodedUrl').href = encodedUrlBased;
-        document.getElementById('encodedUrl').textContent = encodedUrlBased;
-        
-        document.getElementById('mappedResult').classList.add('show');
-      } catch (error) {
-        alert('Error generating mapped URL: ' + error.message);
-      }
-    }
-    
     async function createPersistentMap() {
       const originalUrl = document.getElementById('persistentOriginalUrl').value;
       const customMapId = document.getElementById('customMapId').value;
@@ -459,6 +427,11 @@
           document.getElementById('mapIdDisplay').textContent = data.mapId;
           
           document.getElementById('persistentResult').classList.add('show');
+          
+          // Add QR code button
+          setTimeout(() => {
+            addQRCodeToElement('persistentUrl');
+          }, 100);
         } else {
           alert('Error: ' + data.error);
         }
@@ -512,6 +485,11 @@
           document.getElementById('persistentTextIdDisplay').textContent = data.textId;
           
           document.getElementById('persistentTextResult').classList.add('show');
+          
+          // Add QR code button
+          setTimeout(() => {
+            addQRCodeToElement('persistentTextUrl');
+          }, 100);
         } else {
           alert('Error: ' + data.error);
         }
@@ -571,174 +549,6 @@
         qrButton.style.marginLeft = '10px';
         qrButton.style.verticalAlign = 'middle';
         element.parentNode.appendChild(qrButton);
-      }
-    }
-    
-    // Modify the generateUrl function to add QR codes
-    async function generateUrl() {
-      const content = document.getElementById('content').value;
-      const filename = document.getElementById('filename').value;
-      const siteUrl = document.getElementById('siteUrl').value;
-      
-      if (!content) {
-        alert('Please enter some content');
-        return;
-      }
-      
-      if (!filename) {
-        alert('Please enter a filename');
-        return;
-      }
-      
-      if (!siteUrl) {
-        alert('Please enter your site URL');
-        return;
-      }
-      
-      try {
-        // Use the API endpoint to generate the URL
-        const formData = new FormData();
-        formData.append('content', content);
-        formData.append('filename', filename);
-        formData.append('baseUrl', siteUrl);
-        
-        const response = await fetch('/api/generate-url', {
-          method: 'POST',
-          body: formData
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-          // Update the result section
-          document.getElementById('regularUrl').href = data.url;
-          document.getElementById('regularUrl').textContent = data.url;
-          document.getElementById('base64Url').href = data.base64Url;
-          document.getElementById('base64Url').textContent = data.base64Url;
-          
-          document.getElementById('result').classList.add('show');
-          
-          // Add QR code buttons
-          setTimeout(() => {
-            addQRCodeToElement('regularUrl');
-            addQRCodeToElement('base64Url');
-          }, 100);
-        } else {
-          alert('Error: ' + data.error);
-        }
-      } catch (error) {
-        alert('Error generating URL: ' + error.message);
-      }
-    }
-    
-    // Modify the createPersistentText function to add QR codes
-    async function createPersistentText() {
-      const content = document.getElementById('persistentContent').value;
-      const filename = document.getElementById('persistentFilename').value;
-      const customId = document.getElementById('persistentCustomId').value;
-      const siteUrl = document.getElementById('persistentTextSiteUrl').value;
-      
-      if (!content) {
-        alert('Please enter the content');
-        return;
-      }
-      
-      if (!filename) {
-        alert('Please enter a filename');
-        return;
-      }
-      
-      if (!siteUrl) {
-        alert('Please enter your site URL');
-        return;
-      }
-      
-      try {
-        // Use the API endpoint to create persistent text content
-        const formData = new FormData();
-        formData.append('content', content);
-        formData.append('filename', filename);
-        formData.append('baseUrl', siteUrl);
-        if (customId) {
-          formData.append('customId', customId);
-        }
-        
-        const response = await fetch('/api/create-persistent-text', {
-          method: 'POST',
-          body: formData
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-          // Update the result section
-          document.getElementById('persistentTextUrl').href = data.persistentUrl;
-          document.getElementById('persistentTextUrl').textContent = data.persistentUrl;
-          document.getElementById('persistentTextIdDisplay').textContent = data.textId;
-          
-          document.getElementById('persistentTextResult').classList.add('show');
-          
-          // Add QR code button
-          setTimeout(() => {
-            addQRCodeToElement('persistentTextUrl');
-          }, 100);
-        } else {
-          alert('Error: ' + data.error);
-        }
-      } catch (error) {
-        alert('Error creating persistent text: ' + error.message);
-      }
-    }
-    
-    // Modify the createPersistentMap function to add QR codes
-    async function createPersistentMap() {
-      const originalUrl = document.getElementById('persistentOriginalUrl').value;
-      const customMapId = document.getElementById('customMapId').value;
-      const siteUrl = document.getElementById('persistentSiteUrl').value;
-      
-      if (!originalUrl) {
-        alert('Please enter the original URL to map');
-        return;
-      }
-      
-      if (!siteUrl) {
-        alert('Please enter your site URL');
-        return;
-      }
-      
-      try {
-        // Use the API endpoint to create a persistent mapping
-        const formData = new FormData();
-        formData.append('originalUrl', originalUrl);
-        formData.append('baseUrl', siteUrl);
-        if (customMapId) {
-          formData.append('customId', customMapId);
-        }
-        
-        const response = await fetch('/api/create-persistent-map', {
-          method: 'POST',
-          body: formData
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-          // Update the result section
-          document.getElementById('persistentUrl').href = data.mappedUrl;
-          document.getElementById('persistentUrl').textContent = data.mappedUrl;
-          document.getElementById('mapIdDisplay').textContent = data.mapId;
-          
-          document.getElementById('persistentResult').classList.add('show');
-          
-          // Add QR code button
-          setTimeout(() => {
-            addQRCodeToElement('persistentUrl');
-          }, 100);
-        } else {
-          alert('Error: ' + data.error);
-        }
-      } catch (error) {
-        alert('Error creating persistent mapping: ' + error.message);
       }
     }
   </script>

@@ -6,12 +6,9 @@
 
 这个服务解决了多个需求：
 1. 访问被阻止或受限的GitHub Gist原始内容（例如 `https://gist.githubusercontent.com/...`）
-2. 为下载的文件指定自定义文件名
-3. 直接从URL参数中的文本内容创建可下载文件
-4. 将任意URL映射到获取内容的代理端点
-5. 支持临时和持久化的URL映射
-6. 支持持久化的文本内容存储
-7. 为生成的URL提供二维码
+2. 支持持久化的文本内容存储
+3. 支持持久化的URL映射
+4. 为生成的URL提供二维码
 6. 支持持久化的文本内容存储
 
 ## 功能特性
@@ -22,41 +19,29 @@
 - 支持所有文件类型（JavaScript、CSS、JSON、文本等）
 - 简单的URL替换模式
 - 通过查询参数支持自定义文件名
-- 文本到URL转换功能
-- 复杂内容的Base64编码支持
-- URL映射/代理功能
-- 自包含URL（无需持久存储）
-- **新增：** 使用Cloudflare KV存储的持久化URL映射
-- **新增：** 使用Cloudflare KV存储的持久化文本内容
-- **新增：** 二维码生成功能
+- 持久化文本到URL转换功能（使用KV存储）
+- 持久化URL映射/代理功能（使用KV存储）
+- 二维码生成功能
 - **新增：** 安全访问控制
 
 ## 工作原理
 
-该服务提供六个主要功能：
+该服务提供四个主要功能：
 
 ### 1. Gist代理
 拦截发送到 `/gist/*` 的请求并将其转发到 `https://gist.githubusercontent.com/*`，有效地作为代理以绕过限制。
 
-### 2. 临时文本到URL转换器
-拦截发送到 `/text/*` 的请求并返回查询参数中指定的内容作为可下载文件。
-
-### 3. 持久化文本到URL转换器
+### 2. 持久化文本到URL转换器
 使用Cloudflare KV存储维护文本内容：
 - 端点：`/text-persistent/{id}` - 从存储的文本内容检索
 - API：`/api/create-persistent-text` - 创建新的持久化文本内容
 
-### 4. 临时URL映射/代理
-提供获取任何URL内容并将其返回给客户端的端点，无需持久存储：
-- 基于参数：`/proxy-direct?url=encoded_target_url`
-- Base64编码：`/proxy/base64_encoded_url`
-
-### 5. 持久化URL映射/代理
+### 3. 持久化URL映射/代理
 使用Cloudflare KV存储维护URL映射：
 - 端点：`/map/{id}` - 从存储的原始URL检索内容
 - API：`/api/create-persistent-map` - 创建新的持久化映射
 
-### 6. 二维码生成器
+### 4. 二维码生成器
 为任意URL生成二维码图片：
 - 端点：`/qrcode/generate?url={target-url}` - 生成目标URL的二维码
 - 方便移动设备扫描访问
@@ -122,36 +107,7 @@ https://your-site.pages.dev/gist/octocat/12345/raw/example.js
 https://your-site.pages.dev/gist/octocat/12345/raw/example.js?filename=my-custom-script.js
 ```
 
-### 2. 临时文本到URL转换器
-
-#### 基本URL模式
-```
-https://{your-site}.pages.dev/text/{filename.ext}?content={text-content}
-```
-
-#### 使用Base64编码
-```
-https://{your-site}.pages.dev/text/{filename.ext}?b64={base64-encoded-content}
-```
-
-#### 示例
-
-**纯文本：**
-```
-https://your-site.pages.dev/text/hello.txt?content=Hello%20World
-```
-
-**JavaScript文件：**
-```
-https://your-site.pages.dev/text/script.js?content=function%20test()%20{%20return%20'Hello';%20}
-```
-
-**JSON与base64：**
-```
-https://your-site.pages.dev/text/data.json?b64=eyAiZGF0YSI6ICJleGFtcGxlIiwgIm51bWJlciI6IDEyMyB9
-```
-
-### 3. 持久化文本到URL转换器
+### 2. 持久化文本到URL转换器
 
 #### 创建文本内容（通过API）
 ```
@@ -168,31 +124,7 @@ POST 到 /api/create-persistent-text
 https://{your-site}.pages.dev/text-persistent/{text-id}
 ```
 
-### 4. 临时URL映射/代理
-
-#### 基于参数的模式
-```
-https://{your-site}.pages.dev/proxy-direct?url={encoded-target-url}
-```
-
-#### Base64编码模式
-```
-https://{your-site}.pages.dev/proxy/{base64-encoded-url}
-```
-
-#### 示例
-
-**基于参数：**
-```
-https://your-site.pages.dev/proxy-direct?url=https%3A%2F%2Fexample.com%2Fdata.json
-```
-
-**Base64编码：**
-```
-https://your-site.pages.dev/proxy/aHR0cHM6Ly9leGFtcGxlLmNvbS9kYXRhLmpzb24=
-```
-
-### 5. 持久化URL映射/代理
+### 3. 持久化URL映射/代理
 
 #### 创建映射（通过API）
 ```
@@ -208,7 +140,7 @@ POST 到 /api/create-persistent-map
 https://{your-site}.pages.dev/map/{mapping-id}
 ```
 
-### 6. 二维码生成器
+### 4. 二维码生成器
 
 #### 生成二维码
 ```
