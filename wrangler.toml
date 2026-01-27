@@ -7,6 +7,3 @@ pages_build_output_dir = "."
 binding = "URL_MAPPER_KV"
 id = "7cdf42435f374e909af15b3243dbbd92"
 preview_id = "7cdf42435f374e909af15b3243dbbd92"
-
-[env.production]
-account_id = "your-account-id-here"
