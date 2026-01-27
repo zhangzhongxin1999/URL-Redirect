@@ -946,14 +946,18 @@ function getHtmlPage() {
                                  '<strong>Content Preview:</strong> ' + mapping.contentPreview + '<br>';
               }
               
+              // Escape single quotes in userId and customPath to prevent breaking the onclick attribute
+              const escapedUserId = userId.replace(/'/g, "\\'");
+              const escapedCustomPath = mapping.customPath.replace(/'/g, "\\'");
+              
               mappingItem.innerHTML = 
                 '<div>' +
                   '<strong>Custom Path:</strong> ' + mapping.customPath + '<br>' +
                   contentPreview +
                   '<strong>Created:</strong> ' + new Date(mapping.createdAt).toLocaleString() + '<br>' +
-                  '<strong>Full Path:</strong> /m/' + userId + '/' + mapping.customPath + '<br>' +
-                  '<a href="/m/' + userId + '/' + mapping.customPath + '" target="_blank">Open</a>' +
-                  '<button class="delete-btn" onclick="deleteMapping(\'' + userId + '\', \'' + mapping.customPath + '\')">Delete</button>' +
+                  '<strong>Full Path:</strong> /m/' + escapedUserId + '/' + escapedCustomPath + '<br>' +
+                  '<a href="/m/' + escapedUserId + '/' + escapedCustomPath + '" target="_blank">Open</a>' +
+                  '<button class="delete-btn" onclick="deleteMapping(\'' + escapedUserId + '\', \'' + escapedCustomPath + '\')">Delete</button>' +
                 '</div>';
               
               mappingsListDiv.appendChild(mappingItem);
@@ -1014,6 +1018,7 @@ function getHtmlPage() {
         element.parentNode.appendChild(qrButton);
       }
     }
+  </script>
   </script>
 </body>
 </html>`;
