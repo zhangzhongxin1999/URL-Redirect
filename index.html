@@ -202,6 +202,29 @@
       </div>
     </div>
     
+    <div class="url-mapper">
+      <h2>🔄 URL Mapper</h2>
+      <p>Map any URL to a proxy URL that fetches content dynamically:</p>
+      
+      <div class="form-group">
+        <label for="originalUrl">Original URL to map:</label>
+        <input type="url" id="originalUrl" placeholder="e.g., https://example.com/data.json">
+      </div>
+      
+      <div class="form-group">
+        <label for="mappedSiteUrl">Your Site URL:</label>
+        <input type="url" id="mappedSiteUrl" value="https://your-site.pages.dev" placeholder="e.g., https://your-site.pages.dev">
+      </div>
+      
+      <button onclick="generateMappedUrl()">Generate Mapped URL</button>
+      
+      <div id="mappedResult" class="result">
+        <p><strong>Generated Mapped URLs:</strong></p>
+        <p>Parameter-based: <a id="paramUrl" href="#" target="_blank"></a></p>
+        <p>Encoded URL: <a id="encodedUrl" href="#" target="_blank"></a></p>
+      </div>
+    </div>
+    
     <div class="instructions">
       <h2>General Instructions</h2>
       <ol>
@@ -281,6 +304,38 @@
         }
       } catch (error) {
         alert('Error generating URL: ' + error.message);
+      }
+    }
+    
+    async function generateMappedUrl() {
+      const originalUrl = document.getElementById('originalUrl').value;
+      const siteUrl = document.getElementById('mappedSiteUrl').value;
+      
+      if (!originalUrl) {
+        alert('Please enter the original URL to map');
+        return;
+      }
+      
+      if (!siteUrl) {
+        alert('Please enter your site URL');
+        return;
+      }
+      
+      try {
+        // Create a mapping using the URL encoding approach
+        const encodedUrl = btoa(encodeURIComponent(originalUrl));
+        const paramBasedUrl = `${siteUrl}/proxy-direct?url=${encodeURIComponent(originalUrl)}`;
+        const encodedUrlBased = `${siteUrl}/proxy/${encodedUrl}`;
+        
+        // Update the result section
+        document.getElementById('paramUrl').href = paramBasedUrl;
+        document.getElementById('paramUrl').textContent = paramBasedUrl;
+        document.getElementById('encodedUrl').href = encodedUrlBased;
+        document.getElementById('encodedUrl').textContent = encodedUrlBased;
+        
+        document.getElementById('mappedResult').classList.add('show');
+      } catch (error) {
+        alert('Error generating mapped URL: ' + error.message);
       }
     }
   </script>
