@@ -1,5 +1,5 @@
 // Function to handle dynamic routing for user-defined mappings under /m/*
-export async function onRequest({ request, env, next }) {
+export async function onRequest({ request, env }) {
   const url = new URL(request.url);
   const path = url.pathname;
 
@@ -7,6 +7,7 @@ export async function onRequest({ request, env, next }) {
   const routePath = path.substring(3); // Remove '/m/' prefix
   const pathParts = routePath.split('/');
   
+  // Since we need at least userId and customPath, verify we have enough parts
   if (pathParts.length >= 2) {
     const userId = pathParts[0];
     const customPath = pathParts.slice(1).join('/');
@@ -122,8 +123,11 @@ export async function onRequest({ request, env, next }) {
         headers: { 'Content-Type': 'text/plain' }
       });
     }
+  } else {
+    // If path doesn't have the expected format, return an error
+    return new Response('Invalid path format. Expected: /m/{userId}/{customPath}', {
+      status: 400,
+      headers: { 'Content-Type': 'text/plain' }
+    });
   }
-  
-  // If path doesn't match our expected pattern, continue to next handler
-  return next();
 }
