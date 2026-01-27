@@ -1239,14 +1239,14 @@ async function handleGetUserMappings(request, env, path) {
   
   // Extract userId from the path: /api/user/{userId}/mappings
   const pathParts = path.split('/');
-  if (pathParts.length < 5 || pathParts[3] !== 'user' || pathParts[5] !== 'mappings') {
+  if (pathParts.length < 5 || pathParts[2] !== 'user' || pathParts[4] !== 'mappings') {
     return new Response(JSON.stringify({ error: 'Invalid path format' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' }
     });
   }
   
-  const userId = pathParts[4];
+  const userId = pathParts[3];
   
   if (!userId) {
     return new Response(JSON.stringify({ error: 'User ID is required' }), {
@@ -1330,10 +1330,10 @@ async function handleDeleteUserMapping(request, env, path) {
   
   // Extract userId and customPath from the path: /api/user/{userId}/mappings/{customPath}/delete
   const pathParts = path.split('/');
-  if (pathParts.length < 7 || pathParts[3] !== 'user' || pathParts[5] !== 'mappings' || pathParts[6] === 'delete') {
+  if (pathParts.length < 6 || pathParts[2] !== 'user' || pathParts[4] !== 'mappings' || pathParts[5] === 'delete') {
     // Handle the case where 'delete' is part of the customPath
     if (pathParts[pathParts.length - 1] === 'delete') {
-      const userId = pathParts[4];
+      const userId = pathParts[3];
       const customPath = pathParts.slice(5, pathParts.length - 1).join('/'); // Everything between 'mappings' and 'delete'
       
       return performDelete(env, userId, customPath);
@@ -1345,8 +1345,8 @@ async function handleDeleteUserMapping(request, env, path) {
     }
   }
   
-  const userId = pathParts[4];
-  const customPath = pathParts[6]; // The path part after 'mappings'
+  const userId = pathParts[3];
+  const customPath = pathParts[5]; // The path part after 'mappings'
   
   return performDelete(env, userId, customPath);
 }
