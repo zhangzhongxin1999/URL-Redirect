@@ -4,7 +4,7 @@ compatibility_date = "2023-10-25"
 # Bind the KV namespace for user-defined mappings
 [[kv_namespaces]]
 binding = "URL_MAPPER_KV"
-id = "your-kv-namespace-id-here"
+id = "7cdf42435f374e909af15b3243dbbd92"
 preview_id = "your-preview-kv-namespace-id-here"
 
 [env.production]
