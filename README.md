@@ -202,13 +202,15 @@ To use persistent URL mappings:
 
 ## Security Considerations
 
-- This is a simple proxy service without authentication
+- This is a simple proxy service without authentication by default
 - All requests are forwarded without modification
+- **Important**: To secure your instance, visit `/admin/access-control` to set up authentication
 - Implement additional security measures if needed for production use
 - Be aware of and comply with GitHub's Terms of Service
 - Sanitizes filenames to prevent path traversal attacks
 - Validates URLs before making requests
 - Requires proper configuration of KV namespace for persistent mappings
+- Consider restricting access to prevent abuse
 
 ## Limitations
 
