@@ -10,6 +10,7 @@
 3. 直接从URL参数中的文本内容创建可下载文件
 4. 将任意URL映射到获取内容的代理端点
 5. 支持临时和持久化的URL映射
+6. 支持持久化的文本内容存储
 
 ## 功能特性
 
@@ -24,24 +25,30 @@
 - URL映射/代理功能
 - 自包含URL（无需持久存储）
 - **新增：** 使用Cloudflare KV存储的持久化URL映射
+- **新增：** 使用Cloudflare KV存储的持久化文本内容
 - **新增：** 安全访问控制
 
 ## 工作原理
 
-该服务提供四个主要功能：
+该服务提供五个主要功能：
 
 ### 1. Gist代理
 拦截发送到 `/gist/*` 的请求并将其转发到 `https://gist.githubusercontent.com/*`，有效地作为代理以绕过限制。
 
-### 2. 文本到URL转换器
+### 2. 临时文本到URL转换器
 拦截发送到 `/text/*` 的请求并返回查询参数中指定的内容作为可下载文件。
 
-### 3. 临时URL映射/代理
+### 3. 持久化文本到URL转换器
+使用Cloudflare KV存储维护文本内容：
+- 端点：`/text-persistent/{id}` - 从存储的文本内容检索
+- API：`/api/create-persistent-text` - 创建新的持久化文本内容
+
+### 4. 临时URL映射/代理
 提供获取任何URL内容并将其返回给客户端的端点，无需持久存储：
 - 基于参数：`/proxy-direct?url=encoded_target_url`
 - Base64编码：`/proxy/base64_encoded_url`
 
-### 4. 持久化URL映射/代理
+### 5. 持久化URL映射/代理
 使用Cloudflare KV存储维护URL映射：
 - 端点：`/map/{id}` - 从存储的原始URL检索内容
 - API：`/api/create-persistent-map` - 创建新的持久化映射
@@ -58,12 +65,13 @@
    - 框架预设：`None`
    - 构建命令：`echo "Build not needed for static site"`
    - 构建输出目录：`./`
-6. **重要：** 为持久化映射设置Cloudflare KV命名空间：
+6. **重要：** 为持久化功能设置Cloudflare KV命名空间：
    - 前往 Workers & Pages → KV → 创建命名空间
-   - 命名为 "URL_MAPPER_KV"（或你喜欢的名称）
+   - 命名为 "URL_MAPPER_KV"（用于URL映射）
+   - 命名为 "TEXT_STORAGE_KV"（用于文本内容存储）
    - 在Pages设置 → 环境变量中添加：
-     - 键：`URL_MAPPER_KV`
-     - 值：你的KV命名空间ID
+     - 键：`URL_MAPPER_KV`，值：你的URL映射KV命名空间ID
+     - 键：`TEXT_STORAGE_KV`，值：你的文本存储KV命名空间ID
 7. 点击"保存并部署"
 
 ### 方法2：直接上传
@@ -106,7 +114,7 @@ https://your-site.pages.dev/gist/octocat/12345/raw/example.js
 https://your-site.pages.dev/gist/octocat/12345/raw/example.js?filename=my-custom-script.js
 ```
 
-### 2. 文本到URL转换器
+### 2. 临时文本到URL转换器
 
 #### 基本URL模式
 ```
@@ -135,7 +143,24 @@ https://your-site.pages.dev/text/script.js?content=function%20test()%20{%20retur
 https://your-site.pages.dev/text/data.json?b64=eyAiZGF0YSI6ICJleGFtcGxlIiwgIm51bWJlciI6IDEyMyB9
 ```
 
-### 3. 临时URL映射/代理
+### 3. 持久化文本到URL转换器
+
+#### 创建文本内容（通过API）
+```
+POST 到 /api/create-persistent-text
+表单数据：
+- content: 要存储的文本内容
+- filename: 文件名（如 config.json）
+- customId: （可选）自定义ID
+- baseUrl: 你的网站URL
+```
+
+#### 访问持久化文本内容
+```
+https://{your-site}.pages.dev/text-persistent/{text-id}
+```
+
+### 4. 临时URL映射/代理
 
 #### 基于参数的模式
 ```
@@ -159,7 +184,7 @@ https://your-site.pages.dev/proxy-direct?url=https%3A%2F%2Fexample.com%2Fdata.js
 https://your-site.pages.dev/proxy/aHR0cHM6Ly9leGFtcGxlLmNvbS9kYXRhLmpzb24=
 ```
 
-### 4. 持久化URL映射/代理
+### 5. 持久化URL映射/代理
 
 #### 创建映射（通过API）
 ```
@@ -177,14 +202,16 @@ https://{your-site}.pages.dev/map/{mapping-id}
 
 ## 持久化存储配置
 
-要使用持久化URL映射：
+要使用持久化功能：
 
-1. 在Cloudflare仪表板中创建KV命名空间
-2. 命名为 "URL_MAPPER_KV" 或其他你喜欢的名称
-3. 获取命名空间ID
+1. 在Cloudflare仪表板中创建两个KV命名空间
+2. 命名为：
+   - "URL_MAPPER_KV"（用于URL映射）
+   - "TEXT_STORAGE_KV"（用于文本内容存储）
+3. 获取两个命名空间的ID
 4. 在你的Pages项目设置中，添加环境变量：
-   - 键：`URL_MAPPER_KV`
-   - 值：你的KV命名空间ID
+   - 键：`URL_MAPPER_KV`，值：你的URL映射KV命名空间ID
+   - 键：`TEXT_STORAGE_KV`，值：你的文本存储KV命名空间ID
 5. 重新部署你的项目
 
 ## 安全功能
@@ -202,8 +229,8 @@ https://{your-site}.pages.dev/map/{mapping-id}
 - 设置Content-Disposition头以强制使用自定义文件名下载
 - 实施缓存策略：
   - Gist代理：15分钟缓存（在性能和新鲜度之间平衡）
-  - 文本到URL转换器：无缓存（确保动态文本内容的新鲜度）
-  - URL映射器：无缓存（确保来自目标URL的新鲜内容）
+  - 临时文本到URL转换器：无缓存（确保动态文本内容的新鲜度）
+  - 持久化文本/URL映射器：无缓存（确保内容的新鲜度）
 - 支持基于文件扩展名的多种内容类型
 - 自包含临时URL（无需持久存储）
 - 持久化存储选项使用Cloudflare KV
@@ -225,9 +252,9 @@ https://{your-site}.pages.dev/map/{mapping-id}
 - 二进制文件和文本文件不会分别缓存
 - 未实施速率限制（如有需要可考虑添加）
 - 依赖Cloudflare的网络和目标服务器的可用性
-- 文本到URL和临时URL映射功能受URL长度限制
+- 临时文本到URL和临时URL映射功能受URL长度限制
 - 自包含的临时URL对于复杂的目标URL可能会变得很长
-- 持久化映射需要Cloudflare KV，这有其自身的限制和成本
+- 持久化功能需要Cloudflare KV，这有其自身的限制和成本
 
 ## 许可证
 

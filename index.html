@@ -179,30 +179,63 @@
     </div>
     
     <div class="url-generator">
-      <h2>🔗 URL Generator</h2>
-      <p>Generate direct links to download your text content as files:</p>
+      <h2>🔗 URL 生成器</h2>
+      <p>生成直接链接以将您的文本内容下载为文件：</p>
       
       <div class="form-group">
-        <label for="content">Content:</label>
-        <textarea id="content" placeholder="Enter your text content here..."></textarea>
+        <label for="content">内容：</label>
+        <textarea id="content" placeholder="在此输入您的文本内容..."></textarea>
       </div>
       
       <div class="form-group">
-        <label for="filename">Filename (with extension):</label>
-        <input type="text" id="filename" value="config.txt" placeholder="e.g., config.json, script.js">
+        <label for="filename">文件名（带扩展名）：</label>
+        <input type="text" id="filename" value="config.txt" placeholder="例如：config.json, script.js">
       </div>
       
       <div class="form-group">
-        <label for="siteUrl">Your Site URL:</label>
-        <input type="url" id="siteUrl" value="https://your-site.pages.dev" placeholder="e.g., https://your-site.pages.dev">
+        <label for="siteUrl">您的网站URL：</label>
+        <input type="url" id="siteUrl" value="https://your-site.pages.dev" placeholder="例如：https://your-site.pages.dev">
       </div>
       
-      <button onclick="generateUrl()">Generate URL</button>
+      <button onclick="generateUrl()">生成临时URL</button>
       
       <div id="result" class="result">
-        <p><strong>Generated URLs:</strong></p>
-        <p>Regular: <a id="regularUrl" href="#" target="_blank"></a></p>
+        <p><strong>生成的临时URL：</strong></p>
+        <p>常规: <a id="regularUrl" href="#" target="_blank"></a></p>
         <p>Base64: <a id="base64Url" href="#" target="_blank"></a></p>
+      </div>
+    </div>
+    
+    <div class="persistent-text-generator">
+      <h2>💾 持久化文本URL生成器</h2>
+      <p>创建持久化的文本内容，通过唯一ID访问：</p>
+      
+      <div class="form-group">
+        <label for="persistentContent">内容：</label>
+        <textarea id="persistentContent" placeholder="在此输入您的文本内容..."></textarea>
+      </div>
+      
+      <div class="form-group">
+        <label for="persistentFilename">文件名（带扩展名）：</label>
+        <input type="text" id="persistentFilename" value="config.txt" placeholder="例如：config.json, script.js">
+      </div>
+      
+      <div class="form-group">
+        <label for="persistentCustomId">自定义ID（可选）：</label>
+        <input type="text" id="persistentCustomId" placeholder="留空以自动生成ID">
+      </div>
+      
+      <div class="form-group">
+        <label for="persistentTextSiteUrl">您的网站URL：</label>
+        <input type="url" id="persistentTextSiteUrl" value="https://your-site.pages.dev" placeholder="例如：https://your-site.pages.dev">
+      </div>
+      
+      <button onclick="createPersistentText()">创建持久化文本URL</button>
+      
+      <div id="persistentTextResult" class="result">
+        <p><strong>持久化文本URL：</strong></p>
+        <p><a id="persistentTextUrl" href="#" target="_blank"></a></p>
+        <p>ID: <span id="persistentTextIdDisplay"></span></p>
       </div>
     </div>
     
@@ -414,6 +447,59 @@
         }
       } catch (error) {
         alert('Error creating persistent mapping: ' + error.message);
+      }
+    }
+    
+    async function createPersistentText() {
+      const content = document.getElementById('persistentContent').value;
+      const filename = document.getElementById('persistentFilename').value;
+      const customId = document.getElementById('persistentCustomId').value;
+      const siteUrl = document.getElementById('persistentTextSiteUrl').value;
+      
+      if (!content) {
+        alert('Please enter the content');
+        return;
+      }
+      
+      if (!filename) {
+        alert('Please enter a filename');
+        return;
+      }
+      
+      if (!siteUrl) {
+        alert('Please enter your site URL');
+        return;
+      }
+      
+      try {
+        // Use the API endpoint to create persistent text content
+        const formData = new FormData();
+        formData.append('content', content);
+        formData.append('filename', filename);
+        formData.append('baseUrl', siteUrl);
+        if (customId) {
+          formData.append('customId', customId);
+        }
+        
+        const response = await fetch('/api/create-persistent-text', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          // Update the result section
+          document.getElementById('persistentTextUrl').href = data.persistentUrl;
+          document.getElementById('persistentTextUrl').textContent = data.persistentUrl;
+          document.getElementById('persistentTextIdDisplay').textContent = data.textId;
+          
+          document.getElementById('persistentTextResult').classList.add('show');
+        } else {
+          alert('Error: ' + data.error);
+        }
+      } catch (error) {
+        alert('Error creating persistent text: ' + error.message);
       }
     }
   </script>
