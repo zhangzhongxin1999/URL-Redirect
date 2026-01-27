@@ -11,6 +11,8 @@
 4. 将任意URL映射到获取内容的代理端点
 5. 支持临时和持久化的URL映射
 6. 支持持久化的文本内容存储
+7. 为生成的URL提供二维码
+6. 支持持久化的文本内容存储
 
 ## 功能特性
 
@@ -26,11 +28,12 @@
 - 自包含URL（无需持久存储）
 - **新增：** 使用Cloudflare KV存储的持久化URL映射
 - **新增：** 使用Cloudflare KV存储的持久化文本内容
+- **新增：** 二维码生成功能
 - **新增：** 安全访问控制
 
 ## 工作原理
 
-该服务提供五个主要功能：
+该服务提供六个主要功能：
 
 ### 1. Gist代理
 拦截发送到 `/gist/*` 的请求并将其转发到 `https://gist.githubusercontent.com/*`，有效地作为代理以绕过限制。
@@ -52,6 +55,11 @@
 使用Cloudflare KV存储维护URL映射：
 - 端点：`/map/{id}` - 从存储的原始URL检索内容
 - API：`/api/create-persistent-map` - 创建新的持久化映射
+
+### 6. 二维码生成器
+为任意URL生成二维码图片：
+- 端点：`/qrcode/generate?url={target-url}` - 生成目标URL的二维码
+- 方便移动设备扫描访问
 
 ## 部署
 
@@ -198,6 +206,18 @@ POST 到 /api/create-persistent-map
 #### 访问映射的内容
 ```
 https://{your-site}.pages.dev/map/{mapping-id}
+```
+
+### 6. 二维码生成器
+
+#### 生成二维码
+```
+https://{your-site}.pages.dev/qrcode/generate?url={target-url}
+```
+
+#### 示例
+```
+https://your-site.pages.dev/qrcode/generate?url=https%3A%2F%2Fexample.com%2Fdata.json
 ```
 
 ## 持久化存储配置

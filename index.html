@@ -239,6 +239,23 @@
       </div>
     </div>
     
+    <div class="qrcode-generator">
+      <h2>📱 二维码生成器</h2>
+      <p>为任何URL生成二维码，方便移动设备扫描：</p>
+      
+      <div class="form-group">
+        <label for="qrcodeUrl">URL：</label>
+        <input type="url" id="qrcodeUrl" placeholder="输入要生成二维码的URL">
+      </div>
+      
+      <button onclick="generateQRCode()">生成二维码</button>
+      
+      <div id="qrcodeResult" class="result">
+        <p><strong>二维码：</strong></p>
+        <div id="qrcodeContainer" style="display:flex; justify-content:center; margin:10px 0;"></div>
+      </div>
+    </div>
+    
     <div class="url-mapper">
       <h2>🔄 URL Mapper</h2>
       <p>Map any URL to a proxy URL that fetches content dynamically:</p>
@@ -500,6 +517,228 @@
         }
       } catch (error) {
         alert('Error creating persistent text: ' + error.message);
+      }
+    }
+    
+    async function generateQRCode() {
+      const url = document.getElementById('qrcodeUrl').value;
+      
+      if (!url) {
+        alert('Please enter a URL');
+        return;
+      }
+      
+      try {
+        // Validate URL
+        new URL(url);
+        
+        // Generate QR code using the API
+        const qrCodeUrl = `/qrcode/generate?url=${encodeURIComponent(url)}`;
+        
+        // Create an image element for the QR code
+        const img = document.createElement('img');
+        img.src = qrCodeUrl;
+        img.alt = 'QR Code';
+        img.style.maxWidth = '300px';
+        img.style.height = 'auto';
+        img.onerror = function() {
+          alert('Error generating QR code');
+        };
+        
+        // Clear previous QR code and add the new one
+        const container = document.getElementById('qrcodeContainer');
+        container.innerHTML = '';
+        container.appendChild(img);
+        
+        // Show the result div
+        document.getElementById('qrcodeResult').classList.add('show');
+      } catch (error) {
+        alert('Invalid URL: ' + error.message);
+      }
+    }
+    
+    // Add QR code functionality to existing URL generators
+    function addQRCodeToElement(elementId) {
+      const element = document.getElementById(elementId);
+      if (element && element.href) {
+        // Create a button to generate QR code for this specific URL
+        const qrButton = document.createElement('button');
+        qrButton.textContent = 'QR';
+        qrButton.onclick = function() {
+          const qrCodeUrl = `/qrcode/generate?url=${encodeURIComponent(element.href)}`;
+          window.open(qrCodeUrl, '_blank', 'width=350,height=400');
+        };
+        qrButton.style.marginLeft = '10px';
+        qrButton.style.verticalAlign = 'middle';
+        element.parentNode.appendChild(qrButton);
+      }
+    }
+    
+    // Modify the generateUrl function to add QR codes
+    async function generateUrl() {
+      const content = document.getElementById('content').value;
+      const filename = document.getElementById('filename').value;
+      const siteUrl = document.getElementById('siteUrl').value;
+      
+      if (!content) {
+        alert('Please enter some content');
+        return;
+      }
+      
+      if (!filename) {
+        alert('Please enter a filename');
+        return;
+      }
+      
+      if (!siteUrl) {
+        alert('Please enter your site URL');
+        return;
+      }
+      
+      try {
+        // Use the API endpoint to generate the URL
+        const formData = new FormData();
+        formData.append('content', content);
+        formData.append('filename', filename);
+        formData.append('baseUrl', siteUrl);
+        
+        const response = await fetch('/api/generate-url', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          // Update the result section
+          document.getElementById('regularUrl').href = data.url;
+          document.getElementById('regularUrl').textContent = data.url;
+          document.getElementById('base64Url').href = data.base64Url;
+          document.getElementById('base64Url').textContent = data.base64Url;
+          
+          document.getElementById('result').classList.add('show');
+          
+          // Add QR code buttons
+          setTimeout(() => {
+            addQRCodeToElement('regularUrl');
+            addQRCodeToElement('base64Url');
+          }, 100);
+        } else {
+          alert('Error: ' + data.error);
+        }
+      } catch (error) {
+        alert('Error generating URL: ' + error.message);
+      }
+    }
+    
+    // Modify the createPersistentText function to add QR codes
+    async function createPersistentText() {
+      const content = document.getElementById('persistentContent').value;
+      const filename = document.getElementById('persistentFilename').value;
+      const customId = document.getElementById('persistentCustomId').value;
+      const siteUrl = document.getElementById('persistentTextSiteUrl').value;
+      
+      if (!content) {
+        alert('Please enter the content');
+        return;
+      }
+      
+      if (!filename) {
+        alert('Please enter a filename');
+        return;
+      }
+      
+      if (!siteUrl) {
+        alert('Please enter your site URL');
+        return;
+      }
+      
+      try {
+        // Use the API endpoint to create persistent text content
+        const formData = new FormData();
+        formData.append('content', content);
+        formData.append('filename', filename);
+        formData.append('baseUrl', siteUrl);
+        if (customId) {
+          formData.append('customId', customId);
+        }
+        
+        const response = await fetch('/api/create-persistent-text', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          // Update the result section
+          document.getElementById('persistentTextUrl').href = data.persistentUrl;
+          document.getElementById('persistentTextUrl').textContent = data.persistentUrl;
+          document.getElementById('persistentTextIdDisplay').textContent = data.textId;
+          
+          document.getElementById('persistentTextResult').classList.add('show');
+          
+          // Add QR code button
+          setTimeout(() => {
+            addQRCodeToElement('persistentTextUrl');
+          }, 100);
+        } else {
+          alert('Error: ' + data.error);
+        }
+      } catch (error) {
+        alert('Error creating persistent text: ' + error.message);
+      }
+    }
+    
+    // Modify the createPersistentMap function to add QR codes
+    async function createPersistentMap() {
+      const originalUrl = document.getElementById('persistentOriginalUrl').value;
+      const customMapId = document.getElementById('customMapId').value;
+      const siteUrl = document.getElementById('persistentSiteUrl').value;
+      
+      if (!originalUrl) {
+        alert('Please enter the original URL to map');
+        return;
+      }
+      
+      if (!siteUrl) {
+        alert('Please enter your site URL');
+        return;
+      }
+      
+      try {
+        // Use the API endpoint to create a persistent mapping
+        const formData = new FormData();
+        formData.append('originalUrl', originalUrl);
+        formData.append('baseUrl', siteUrl);
+        if (customMapId) {
+          formData.append('customId', customMapId);
+        }
+        
+        const response = await fetch('/api/create-persistent-map', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          // Update the result section
+          document.getElementById('persistentUrl').href = data.mappedUrl;
+          document.getElementById('persistentUrl').textContent = data.mappedUrl;
+          document.getElementById('mapIdDisplay').textContent = data.mapId;
+          
+          document.getElementById('persistentResult').classList.add('show');
+          
+          // Add QR code button
+          setTimeout(() => {
+            addQRCodeToElement('persistentUrl');
+          }, 100);
+        } else {
+          alert('Error: ' + data.error);
+        }
+      } catch (error) {
+        alert('Error creating persistent mapping: ' + error.message);
       }
     }
   </script>
