@@ -200,7 +200,7 @@ export default {
   }
 };
 
-// Separate function to return HTML content to avoid template string issues
+// Separate function to return HTML content
 function getHtmlPage() {
   return `<!DOCTYPE html>
 <html lang="en">
@@ -594,9 +594,14 @@ function getHtmlPage() {
         document.getElementById('textUserId').value = currentUser.userId;
         document.getElementById('textUserId').disabled = false;
         
-        // Enable all buttons
+        // Enable buttons
         document.querySelectorAll('button').forEach(btn => {
-          btn.disabled = false;
+          // Only disable non-auth buttons
+          if (!btn.classList.contains('auth-button') && 
+              !btn.classList.contains('logout-button') &&
+              !(btn.textContent.trim() === 'Register' || btn.textContent.trim() === 'Login')) {
+            btn.disabled = true;
+          }
         });
       } else {
         authStatusDiv.className = 'auth-status unauthenticated';
