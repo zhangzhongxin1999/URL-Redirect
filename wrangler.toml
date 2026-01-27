@@ -1,16 +1,11 @@
 name = "url-redirect"
 compatibility_date = "2023-10-25"
 
-# Bind the KV namespaces for persistent storage
+# Bind the KV namespace for user-defined mappings
 [[kv_namespaces]]
 binding = "URL_MAPPER_KV"
 id = "your-kv-namespace-id-here"
 preview_id = "your-preview-kv-namespace-id-here"
-
-[[kv_namespaces]]
-binding = "TEXT_STORAGE_KV"
-id = "your-text-storage-kv-namespace-id-here"
-preview_id = "your-text-storage-preview-kv-namespace-id-here"
 
 [env.production]
 account_id = "your-account-id-here"

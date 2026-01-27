@@ -1,4 +1,4 @@
-// API endpoint to create user-defined text content mappings using KV storage
+// API endpoint to create user-defined URL mappings using KV storage
 import { nanoid } from 'https://cdn.jsdelivr.net/npm/nanoid@4.0.0/nanoid.js';
 
 export async function onRequest(context) {
@@ -32,14 +32,13 @@ export async function onRequest(context) {
   
   try {
     const formData = await request.formData();
-    const content = formData.get('content');
-    const filename = formData.get('filename') || 'text-content.txt';
+    const originalUrl = formData.get('originalUrl');
     const userId = formData.get('userId');
     const customPath = formData.get('customPath');
     const baseUrl = formData.get('baseUrl') || 'https://your-site.pages.dev';
     
-    if (!content) {
-      return new Response(JSON.stringify({ error: 'Content is required' }), {
+    if (!originalUrl) {
+      return new Response(JSON.stringify({ error: 'Original URL is required' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
       });
@@ -59,48 +58,41 @@ export async function onRequest(context) {
       });
     }
     
-    // Determine content type based on file extension
-    let contentType = 'text/plain';
-    if (filename.endsWith('.json')) {
-      contentType = 'application/json';
-    } else if (filename.endsWith('.js')) {
-      contentType = 'application/javascript';
-    } else if (filename.endsWith('.css')) {
-      contentType = 'text/css';
-    } else if (filename.endsWith('.html') || filename.endsWith('.htm')) {
-      contentType = 'text/html';
-    } else if (filename.endsWith('.xml')) {
-      contentType = 'application/xml';
+    // Validate the original URL
+    try {
+      new URL(originalUrl);
+    } catch (e) {
+      return new Response(JSON.stringify({ error: 'Invalid original URL' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
     
     // Create the mapping key in the format: user:{userId}:path:{customPath}
     const mappingKey = `user:${userId}:path:${customPath}`;
     
-    // Store the content and metadata in KV with the mapping key
-    const storedData = {
-      content: content,
-      filename: filename,
-      contentType: contentType,
+    // Store the original URL in KV with the mapping key
+    const mappingData = {
+      originalUrl: originalUrl,
       userId: userId,
       customPath: customPath,
       createdAt: new Date().toISOString(),
-      type: 'text_content'
+      type: 'url_mapping'
     };
     
-    await env.URL_MAPPER_KV.put(mappingKey, JSON.stringify(storedData));
+    await env.URL_MAPPER_KV.put(mappingKey, JSON.stringify(mappingData));
     
-    // Create the persistent URL
-    const persistentUrl = `${baseUrl}/m/${userId}/${customPath}`;
+    // Create the mapped URL
+    const mappedUrl = `${baseUrl}/m/${userId}/${customPath}`;
     
     return new Response(JSON.stringify({
       success: true,
-      persistentUrl: persistentUrl,
+      mappedUrl: mappedUrl,
       mappingKey: mappingKey,
       userId: userId,
       customPath: customPath,
-      filename: filename,
-      contentType: contentType,
-      message: 'User-defined text content mapping created successfully'
+      originalUrl: originalUrl,
+      message: 'User-defined mapping created successfully'
     }), {
       headers: {
         'Content-Type': 'application/json',
@@ -108,7 +100,7 @@ export async function onRequest(context) {
       }
     });
   } catch (error) {
-    console.error('Error creating user-defined text content:', error);
+    console.error('Error creating user mapping:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }

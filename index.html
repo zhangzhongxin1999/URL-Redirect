@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Universal Content Proxy with URL Generator</title>
+  <title>Universal Content Proxy with User-defined Mapping</title>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -126,276 +126,141 @@
     </div>
     
     <div class="service-section">
-      <h2>1. 📄 Gist Content Proxy</h2>
-      <div class="usage">
-        <h3>How to Use</h3>
-        <p>Use this service to access GitHub Gist raw content that might be restricted in your region:</p>
-        <p>Original URL: <code>https://gist.githubusercontent.com/username/gist-id/raw/file-path</code></p>
-        <p>Proxied URL: <span class="example">https://your-site.pages.dev/gist/username/gist-id/raw/file-path</span></p>
+      <h2>1. 📄 Unified URL Mapping System</h2>
+      <p>Create custom mappings for any URL using your own user ID and custom paths</p>
+      
+      <div class="form-group">
+        <label for="targetUrl">Target URL to map:</label>
+        <input type="url" id="targetUrl" placeholder="e.g., https://example.com/data.json or https://gist.githubusercontent.com/user/gist-id/raw/file.js">
       </div>
       
-      <div class="feature-box">
-        <h3>✨ Feature: Custom Filename</h3>
-        <p>Add a <code>?filename=your-desired-name.ext</code> parameter to specify the download filename:</p>
-        <p>Custom filename URL: <span class="example">https://your-site.pages.dev/gist/username/gist-id/raw/file-path?filename=my-custom-name.js</span></p>
+      <div class="form-group">
+        <label for="userId">Your User ID:</label>
+        <input type="text" id="userId" placeholder="e.g., myuser123">
       </div>
       
-      <div class="examples">
-        <h3>Examples</h3>
-        <p>If your original URL is:</p>
-        <div class="example">https://gist.githubusercontent.com/johndoe/abc123def456/raw/script.js</div>
-        <p>The basic proxied URL would be:</p>
-        <div class="example">https://your-site.pages.dev/gist/johndoe/abc123def456/raw/script.js</div>
-        <p>With custom filename:</p>
-        <div class="example">https://your-site.pages.dev/gist/johndoe/abc123def456/raw/script.js?filename=my-awesome-script.js</div>
-      </div>
-    </div>
-    
-    <div class="service-section">
-      <h2>2. ✍️ Text-to-URL Converter</h2>
-      <div class="usage">
-        <h3>How to Use</h3>
-        <p>Create downloadable text files directly from URL parameters:</p>
-        <p>Format: <span class="example">https://your-site.pages.dev/text/filename.ext?content=your-text-content</span></p>
-        <p>Or with base64 encoding: <span class="example">https://your-site.pages.dev/text/filename.ext?b64=base64-encoded-content</span></p>
+      <div class="form-group">
+        <label for="customPath">Custom Path:</label>
+        <input type="text" id="customPath" placeholder="e.g., my-api-endpoint or my-gist-file">
       </div>
       
-      <div class="feature-box">
-        <h3>💡 Tip: Base64 Encoding</h3>
-        <p>For complex text with special characters, use base64 encoding:</p>
-        <p>Plain text: <span class="example">https://your-site.pages.dev/text/my-file.txt?content=Hello%20World!</span></p>
-        <p>Base64 encoded: <span class="example">https://your-site.pages.dev/text/my-file.txt?b64=SGVsbG8gV29ybGQh</span></p>
+      <div class="form-group">
+        <label for="siteUrl">Your Site URL:</label>
+        <input type="url" id="siteUrl" value="https://your-site.pages.dev" placeholder="e.g., https://your-site.pages.dev">
       </div>
       
-      <div class="examples">
-        <h3>Examples</h3>
-        <p>Simple text file:</p>
-        <div class="example">https://your-site.pages.dev/text/hello.txt?content=Hello%20World</div>
-        <p>JavaScript file:</p>
-        <div class="example">https://your-site.pages.dev/text/script.js?content=function%20test()%20{%20return%20'Hello';%20}</div>
-        <p>JSON file with base64:</p>
-        <div class="example">https://your-site.pages.dev/text/data.json?b64=eyAiZGF0YSI6ICJleGFtcGxlIiwgIm51bWJlciI6IDEyMyB9</div>
+      <button onclick="createUserMapping()">Create Custom Mapping</button>
+      
+      <div id="mappingResult" class="result">
+        <p><strong>Your Custom Mapping:</strong></p>
+        <p><a id="mappingUrl" href="#" target="_blank"></a></p>
+        <p>Mapping Key: <span id="mappingKeyDisplay"></span></p>
       </div>
     </div>
     
     <div class="persistent-text-generator">
-      <h2>💾 持久化文本URL生成器</h2>
-      <p>创建持久化的文本内容，通过唯一ID访问：</p>
+      <h2>2. ✍️ Text Content Mapping</h2>
+      <p>Store text content and access it via your custom mapping</p>
       
       <div class="form-group">
-        <label for="persistentContent">内容：</label>
+        <label for="persistentContent">Content:</label>
         <textarea id="persistentContent" placeholder="在此输入您的文本内容..."></textarea>
       </div>
       
       <div class="form-group">
-        <label for="persistentFilename">文件名（带扩展名）：</label>
+        <label for="persistentFilename">File Name (with extension):</label>
         <input type="text" id="persistentFilename" value="config.txt" placeholder="例如：config.json, script.js">
       </div>
       
       <div class="form-group">
-        <label for="persistentCustomId">自定义ID（可选）：</label>
-        <input type="text" id="persistentCustomId" placeholder="留空以自动生成ID">
+        <label for="textUserId">Your User ID:</label>
+        <input type="text" id="textUserId" placeholder="e.g., myuser123">
       </div>
       
       <div class="form-group">
-        <label for="persistentTextSiteUrl">您的网站URL：</label>
+        <label for="textCustomPath">Custom Path:</label>
+        <input type="text" id="textCustomPath" placeholder="e.g., my-config or my-script">
+      </div>
+      
+      <div class="form-group">
+        <label for="persistentTextSiteUrl">Your Site URL:</label>
         <input type="url" id="persistentTextSiteUrl" value="https://your-site.pages.dev" placeholder="例如：https://your-site.pages.dev">
       </div>
       
-      <button onclick="createPersistentText()">创建持久化文本URL</button>
+      <button onclick="createPersistentText()">Create Text Mapping</button>
       
       <div id="persistentTextResult" class="result">
-        <p><strong>持久化文本URL：</strong></p>
+        <p><strong>Text Mapping URL:</strong></p>
         <p><a id="persistentTextUrl" href="#" target="_blank"></a></p>
-        <p>ID: <span id="persistentTextIdDisplay"></span></p>
-      </div>
-    </div>
-    
-    <div class="url-mapper">
-      <h2>🔄 持久化URL映射</h2>
-      <p>创建持久化的URL映射，通过唯一ID访问：</p>
-      
-      <div class="form-group">
-        <label for="persistentOriginalUrl">要映射的原始URL：</label>
-        <input type="url" id="persistentOriginalUrl" placeholder="例如：https://example.com/data.json">
-      </div>
-      
-      <div class="form-group">
-        <label for="customMapId">自定义映射ID（可选）：</label>
-        <input type="text" id="customMapId" placeholder="留空以自动生成ID">
-      </div>
-      
-      <div class="form-group">
-        <label for="persistentSiteUrl">您的网站URL：</label>
-        <input type="url" id="persistentSiteUrl" value="https://your-site.pages.dev" placeholder="例如：https://your-site.pages.dev">
-      </div>
-      
-      <button onclick="createPersistentMap()">创建持久化映射</button>
-      
-      <div id="persistentResult" class="result">
-        <p><strong>持久化映射URL：</strong></p>
-        <p><a id="persistentUrl" href="#" target="_blank"></a></p>
-        <p>映射ID: <span id="mapIdDisplay"></span></p>
+        <p>Mapping Key: <span id="persistentTextKeyDisplay"></span></p>
       </div>
     </div>
     
     <div class="qrcode-generator">
-      <h2>📱 二维码生成器</h2>
-      <p>为任何URL生成二维码，方便移动设备扫描：</p>
+      <h2>3. 📱 QR Code Generator</h2>
+      <p>Generate QR codes for any URL for mobile scanning:</p>
       
       <div class="form-group">
-        <label for="qrcodeUrl">URL：</label>
-        <input type="url" id="qrcodeUrl" placeholder="输入要生成二维码的URL">
+        <label for="qrcodeUrl">URL:</label>
+        <input type="url" id="qrcodeUrl" placeholder="Enter URL to generate QR code for">
       </div>
       
-      <button onclick="generateQRCode()">生成二维码</button>
+      <button onclick="generateQRCode()">Generate QR Code</button>
       
       <div id="qrcodeResult" class="result">
-        <p><strong>二维码：</strong></p>
+        <p><strong>QR Code:</strong></p>
         <div id="qrcodeContainer" style="display:flex; justify-content:center; margin:10px 0;"></div>
       </div>
     </div>
     
-    <div class="url-mapper">
-      <h2>🔄 URL Mapper</h2>
-      <p>Map any URL to a proxy URL that fetches content dynamically:</p>
-      
-      <div class="form-group">
-        <label for="originalUrl">Original URL to map:</label>
-        <input type="url" id="originalUrl" placeholder="e.g., https://example.com/data.json">
-      </div>
-      
-      <div class="form-group">
-        <label for="mappedSiteUrl">Your Site URL:</label>
-        <input type="url" id="mappedSiteUrl" value="https://your-site.pages.dev" placeholder="e.g., https://your-site.pages.dev">
-      </div>
-      
-      <button onclick="generateMappedUrl()">Generate Temporary Mapped URL</button>
-      
-      <div id="mappedResult" class="result">
-        <p><strong>Generated Temporary Mapped URLs:</strong></p>
-        <p>Parameter-based: <a id="paramUrl" href="#" target="_blank"></a></p>
-        <p>Encoded URL: <a id="encodedUrl" href="#" target="_blank"></a></p>
-      </div>
-    </div>
-    
-    <div class="persistent-mapper">
-      <h2>💾 Persistent URL Mapper</h2>
-      <p>Create persistent URL mappings that are stored and accessible via a unique ID:</p>
-      
-      <div class="form-group">
-        <label for="persistentOriginalUrl">Original URL to map:</label>
-        <input type="url" id="persistentOriginalUrl" placeholder="e.g., https://example.com/data.json">
-      </div>
-      
-      <div class="form-group">
-        <label for="customMapId">Custom Map ID (optional):</label>
-        <input type="text" id="customMapId" placeholder="Leave blank for auto-generated ID">
-      </div>
-      
-      <div class="form-group">
-        <label for="persistentSiteUrl">Your Site URL:</label>
-        <input type="url" id="persistentSiteUrl" value="https://your-site.pages.dev" placeholder="e.g., https://your-site.pages.dev">
-      </div>
-      
-      <button onclick="createPersistentMap()">Create Persistent Mapping</button>
-      
-      <div id="persistentResult" class="result">
-        <p><strong>Persistent Mapped URL:</strong></p>
-        <p><a id="persistentUrl" href="#" target="_blank"></a></p>
-        <p>Map ID: <span id="mapIdDisplay"></span></p>
-      </div>
-    </div>
-    
     <div class="instructions">
-      <h2>General Instructions</h2>
+      <h2>How to Use</h2>
       <ol>
-        <li>For Gist content: Replace the original domain with your Cloudflare Pages domain</li>
-        <li>For text content: Use the <code>/text/</code> endpoint with your desired filename and content</li>
-        <li>Add <code>?filename=</code> to customize download names for Gist files</li>
-        <li>Use <code>?b64=</code> for complex text with special characters</li>
-        <li>Use the URL generator above to easily create text-to-URL links</li>
+        <li>Create a custom mapping by providing a target URL, your user ID, and a custom path</li>
+        <li>Access your mapped content using the format: <code>https://your-site.pages.dev/m/{userId}/{customPath}</code></li>
+        <li>Use the QR code generator to create scannable codes for your URLs</li>
+        <li>All mappings are stored persistently using Cloudflare KV</li>
       </ol>
     </div>
     
     <div class="warning">
-      <strong>Note:</strong> This proxy is intended to help access legitimate content. Please respect GitHub's Terms of Service and any applicable laws in your jurisdiction.
+      <strong>Note:</strong> This proxy is intended to help access legitimate content. Please respect terms of service and applicable laws in your jurisdiction.
     </div>
     
     <div class="features">
       <h2>Features</h2>
       <ul>
-        <li>Bypasses regional restrictions on GitHub Gist content</li>
-        <li>Creates downloadable files from text content in URLs</li>
-        <li>URL generator for easy creation of text-to-URL links</li>
+        <li>Unified URL mapping system with user-defined paths</li>
+        <li>Persistent storage using Cloudflare KV</li>
+        <li>Custom user IDs and paths for organized access</li>
+        <li>Text content storage and retrieval</li>
+        <li>QR code generation for easy mobile access</li>
         <li>Maintains original content type headers</li>
-        <li>Includes caching for improved performance</li>
         <li>Supports all file types (JavaScript, CSS, JSON, text, etc.)</li>
-        <li>Custom filename support via <code>?filename=desired-name.ext</code></li>
-        <li>Text-to-URL conversion with plain text or base64 content</li>
         <li>Automatic download with specified filename</li>
       </ul>
     </div>
   </div>
   
   <script>
-    async function generateUrl() {
-      const content = document.getElementById('content').value;
-      const filename = document.getElementById('filename').value;
+    async function createUserMapping() {
+      const targetUrl = document.getElementById('targetUrl').value;
+      const userId = document.getElementById('userId').value;
+      const customPath = document.getElementById('customPath').value;
       const siteUrl = document.getElementById('siteUrl').value;
       
-      if (!content) {
-        alert('Please enter some content');
+      if (!targetUrl) {
+        alert('Please enter the target URL to map');
         return;
       }
       
-      if (!filename) {
-        alert('Please enter a filename');
+      if (!userId) {
+        alert('Please enter your user ID');
         return;
       }
       
-      if (!siteUrl) {
-        alert('Please enter your site URL');
-        return;
-      }
-      
-      try {
-        // Use the API endpoint to generate the URL
-        const formData = new FormData();
-        formData.append('content', content);
-        formData.append('filename', filename);
-        formData.append('baseUrl', siteUrl);
-        
-        const response = await fetch('/api/generate-url', {
-          method: 'POST',
-          body: formData
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-          // Update the result section
-          document.getElementById('regularUrl').href = data.url;
-          document.getElementById('regularUrl').textContent = data.url;
-          document.getElementById('base64Url').href = data.base64Url;
-          document.getElementById('base64Url').textContent = data.base64Url;
-          
-          document.getElementById('result').classList.add('show');
-        } else {
-          alert('Error: ' + data.error);
-        }
-      } catch (error) {
-        alert('Error generating URL: ' + error.message);
-      }
-    }
-    
-    async function createPersistentMap() {
-      const originalUrl = document.getElementById('persistentOriginalUrl').value;
-      const customMapId = document.getElementById('customMapId').value;
-      const siteUrl = document.getElementById('persistentSiteUrl').value;
-      
-      if (!originalUrl) {
-        alert('Please enter the original URL to map');
+      if (!customPath) {
+        alert('Please enter a custom path');
         return;
       }
       
@@ -407,13 +272,12 @@
       try {
         // Use the API endpoint to create a persistent mapping
         const formData = new FormData();
-        formData.append('originalUrl', originalUrl);
+        formData.append('originalUrl', targetUrl);
+        formData.append('userId', userId);
+        formData.append('customPath', customPath);
         formData.append('baseUrl', siteUrl);
-        if (customMapId) {
-          formData.append('customId', customMapId);
-        }
         
-        const response = await fetch('/api/create-persistent-map', {
+        const response = await fetch('/api/create-user-mapping', {
           method: 'POST',
           body: formData
         });
@@ -422,28 +286,29 @@
         
         if (data.success) {
           // Update the result section
-          document.getElementById('persistentUrl').href = data.mappedUrl;
-          document.getElementById('persistentUrl').textContent = data.mappedUrl;
-          document.getElementById('mapIdDisplay').textContent = data.mapId;
+          document.getElementById('mappingUrl').href = data.mappedUrl;
+          document.getElementById('mappingUrl').textContent = data.mappedUrl;
+          document.getElementById('mappingKeyDisplay').textContent = data.mappingKey;
           
-          document.getElementById('persistentResult').classList.add('show');
+          document.getElementById('mappingResult').classList.add('show');
           
           // Add QR code button
           setTimeout(() => {
-            addQRCodeToElement('persistentUrl');
+            addQRCodeToElement('mappingUrl');
           }, 100);
         } else {
           alert('Error: ' + data.error);
         }
       } catch (error) {
-        alert('Error creating persistent mapping: ' + error.message);
+        alert('Error creating user mapping: ' + error.message);
       }
     }
     
     async function createPersistentText() {
       const content = document.getElementById('persistentContent').value;
       const filename = document.getElementById('persistentFilename').value;
-      const customId = document.getElementById('persistentCustomId').value;
+      const userId = document.getElementById('textUserId').value;
+      const customPath = document.getElementById('textCustomPath').value;
       const siteUrl = document.getElementById('persistentTextSiteUrl').value;
       
       if (!content) {
@@ -453,6 +318,16 @@
       
       if (!filename) {
         alert('Please enter a filename');
+        return;
+      }
+      
+      if (!userId) {
+        alert('Please enter your user ID');
+        return;
+      }
+      
+      if (!customPath) {
+        alert('Please enter a custom path');
         return;
       }
       
@@ -466,10 +341,9 @@
         const formData = new FormData();
         formData.append('content', content);
         formData.append('filename', filename);
+        formData.append('userId', userId);
+        formData.append('customPath', customPath);
         formData.append('baseUrl', siteUrl);
-        if (customId) {
-          formData.append('customId', customId);
-        }
         
         const response = await fetch('/api/create-persistent-text', {
           method: 'POST',
@@ -482,7 +356,7 @@
           // Update the result section
           document.getElementById('persistentTextUrl').href = data.persistentUrl;
           document.getElementById('persistentTextUrl').textContent = data.persistentUrl;
-          document.getElementById('persistentTextIdDisplay').textContent = data.textId;
+          document.getElementById('persistentTextKeyDisplay').textContent = data.mappingKey;
           
           document.getElementById('persistentTextResult').classList.add('show');
           
