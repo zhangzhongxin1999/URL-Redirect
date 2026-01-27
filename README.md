@@ -10,6 +10,7 @@
 3. 直接存储和分发文本内容
 4. 创建用户自定义的URL映射
 5. 为生成的URL提供二维码
+6. 用户管理：查看和删除用户创建的映射
 
 ## 功能特性
 
@@ -22,11 +23,12 @@
 - 用户定义的映射系统（使用KV存储）
 - 文本内容存储和检索
 - 二维码生成功能
+- 用户管理：查看和删除用户创建的映射
 - **新增：** 安全访问控制
 
 ## 工作原理
 
-该服务提供三个主要功能：
+该服务提供四个主要功能：
 
 ### 1. 统一用户映射系统
 使用Cloudflare KV存储维护用户定义的URL映射：
@@ -34,7 +36,12 @@
 - API：`/api/create-user-mapping` - 创建新的用户URL映射
 - API：`/api/create-persistent-text` - 创建新的用户文本内容映射
 
-### 2. 二维码生成器
+### 2. 用户管理
+管理用户创建的映射：
+- API：`/api/user/{userId}/mappings` - 获取用户的所有映射
+- API：`/api/user/{userId}/mappings/{customPath}/delete` - 删除用户的特定映射
+
+### 3. 二维码生成器
 为任意URL生成二维码图片：
 - 端点：`/qrcode/generate?url={target-url}` - 生成目标URL的二维码
 - 方便移动设备扫描访问
@@ -86,7 +93,19 @@ POST 到 /api/create-persistent-text
 https://{your-site}.pages.dev/m/{userId}/{customPath}
 ```
 
-### 3. 二维码生成器
+### 3. 用户管理
+
+#### 查看用户的所有映射
+```
+GET 请求到 /api/user/{userId}/mappings
+```
+
+#### 删除用户的特定映射
+```
+DELETE 请求到 /api/user/{userId}/mappings/{customPath}/delete
+```
+
+### 4. 二维码生成器
 
 #### 生成二维码
 ```
