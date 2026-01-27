@@ -1,226 +1,234 @@
-# Universal Content Proxy with URL Mapping
+# 通用内容代理与URL映射
 
-A Cloudflare Pages application that acts as a proxy for GitHub Gist raw content, converts text to downloadable files, and maps URLs to proxy endpoints, allowing access to restricted content and dynamic content retrieval.
+一个Cloudflare Pages应用程序，可作为GitHub Gist原始内容的代理，将文本转换为可下载文件，并将URL映射到代理端点，允许访问受限制的内容和动态内容检索。
 
-## Purpose
+## 功能
 
-This service addresses multiple needs:
-1. Accessing GitHub Gist raw content (e.g., `https://gist.githubusercontent.com/...`) when it's blocked or restricted
-2. Specifying custom filenames for downloaded files
-3. Creating downloadable files directly from text content in URLs
-4. Mapping any URL to a proxy endpoint that fetches content dynamically
-5. Supporting both temporary and persistent URL mappings
+这个服务解决了多个需求：
+1. 访问被阻止或受限的GitHub Gist原始内容（例如 `https://gist.githubusercontent.com/...`）
+2. 为下载的文件指定自定义文件名
+3. 直接从URL参数中的文本内容创建可下载文件
+4. 将任意URL映射到获取内容的代理端点
+5. 支持临时和持久化的URL映射
 
-## Features
+## 功能特性
 
-- Bypasses regional restrictions on GitHub Gist content
-- Maintains original content type headers
-- Includes caching for improved performance
-- Supports all file types (JavaScript, CSS, JSON, text, etc.)
-- Simple URL replacement pattern
-- Custom filename support via query parameter
-- Text-to-URL conversion feature
-- Base64 encoding support for complex content
-- URL mapping/proxy functionality
-- Self-contained temporary URLs (no persistent storage required)
-- **New:** Persistent URL mappings using Cloudflare KV storage
+- 绕过GitHub Gist内容的区域限制
+- 保持原始内容类型头信息
+- 包括缓存以提高性能
+- 支持所有文件类型（JavaScript、CSS、JSON、文本等）
+- 简单的URL替换模式
+- 通过查询参数支持自定义文件名
+- 文本到URL转换功能
+- 复杂内容的Base64编码支持
+- URL映射/代理功能
+- 自包含URL（无需持久存储）
+- **新增：** 使用Cloudflare KV存储的持久化URL映射
+- **新增：** 安全访问控制
 
-## How It Works
+## 工作原理
 
-The service provides four main functionalities:
+该服务提供四个主要功能：
 
-### 1. Gist Proxy
-Intercepts requests to `/gist/*` and forwards them to `https://gist.githubusercontent.com/*`, effectively acting as a proxy to bypass restrictions.
+### 1. Gist代理
+拦截发送到 `/gist/*` 的请求并将其转发到 `https://gist.githubusercontent.com/*`，有效地作为代理以绕过限制。
 
-### 2. Text-to-URL Converter
-Intercepts requests to `/text/*` and returns the content specified in query parameters as a downloadable file.
+### 2. 文本到URL转换器
+拦截发送到 `/text/*` 的请求并返回查询参数中指定的内容作为可下载文件。
 
-### 3. Temporary URL Mapper/Proxy
-Provides endpoints that fetch content from any URL and return it to the client without persistent storage:
-- Parameter-based: `/proxy-direct?url=encoded_target_url`
-- Base64-encoded: `/proxy/base64_encoded_url`
+### 3. 临时URL映射/代理
+提供获取任何URL内容并将其返回给客户端的端点，无需持久存储：
+- 基于参数：`/proxy-direct?url=encoded_target_url`
+- Base64编码：`/proxy/base64_encoded_url`
 
-### 4. Persistent URL Mapper/Proxy
-Uses Cloudflare KV storage to maintain URL mappings:
-- Endpoint: `/map/{id}` - retrieves content from the stored original URL
-- API: `/api/create-persistent-map` - creates new persistent mappings
+### 4. 持久化URL映射/代理
+使用Cloudflare KV存储维护URL映射：
+- 端点：`/map/{id}` - 从存储的原始URL检索内容
+- API：`/api/create-persistent-map` - 创建新的持久化映射
 
-## Deployment
+## 部署
 
-### Method 1: Connect your GitHub repository (Recommended)
+### 方法1：连接你的GitHub仓库（推荐）
 
-1. Fork this repository to your GitHub account
-2. Go to [Cloudflare Dashboard](https://dash.cloudflare.com/) → Pages
-3. Click "Create a project" → "Connect to Git"
-4. Select your forked repository
-5. In "Build configurations", set:
-   - Framework preset: `None`
-   - Build command: `echo "Build not needed for static site"`
-   - Build output directory: `./`
-6. **Important**: Set up Cloudflare KV namespace for persistent mappings:
-   - Go to Workers & Pages → KV → Create namespace
-   - Name it "URL_MAPPER_KV" (or any name you prefer)
-   - In Pages settings → Environment variables, add:
-     - Key: `URL_MAPPER_KV`
-     - Value: Your KV namespace ID
-7. Click "Save and Deploy"
+1. Fork此仓库到你的GitHub账户
+2. 前往 [Cloudflare Dashboard](https://dash.cloudflare.com/) → Pages
+3. 点击"创建项目" → "连接到Git"
+4. 选择你的forked仓库
+5. 在"构建配置"中设置：
+   - 框架预设：`None`
+   - 构建命令：`echo "Build not needed for static site"`
+   - 构建输出目录：`./`
+6. **重要：** 为持久化映射设置Cloudflare KV命名空间：
+   - 前往 Workers & Pages → KV → 创建命名空间
+   - 命名为 "URL_MAPPER_KV"（或你喜欢的名称）
+   - 在Pages设置 → 环境变量中添加：
+     - 键：`URL_MAPPER_KV`
+     - 值：你的KV命名空间ID
+7. 点击"保存并部署"
 
-### Method 2: Direct upload
+### 方法2：直接上传
 
-1. Download this repository as a ZIP file
-2. Go to [Cloudflare Dashboard](https://dash.cloudflare.com/) → Pages
-3. Click "Create a project" → "Upload assets"
-4. Upload the contents of this repository
-5. Configure KV namespace as described above
-6. Click "Deploy"
+1. 下载此仓库作为ZIP文件
+2. 前往 [Cloudflare Dashboard](https://dash.cloudflare.com/) → Pages
+3. 点击"创建项目" → "上传资产"
+4. 上传此仓库的内容
+5. 配置KV命名空间，如上所述
+6. 点击"部署"
 
-## Usage
+## 使用方法
 
-### 1. Gist Proxy
+### 1. Gist代理
 
-#### Basic URL Pattern
+#### 基本URL模式
 ```
 https://{your-site}.pages.dev/gist/{username}/{gist-id}/raw/{file-path}
 ```
 
-#### With Custom Filename
+#### 带自定义文件名
 ```
 https://{your-site}.pages.dev/gist/{username}/{gist-id}/raw/{file-path}?filename={desired-filename.ext}
 ```
 
-#### Examples
+#### 示例
 
-**Original:**
+**原始：**
 ```
 https://gist.githubusercontent.com/octocat/12345/raw/example.js
 ```
 
-**Basic Proxied:**
+**基本代理：**
 ```
 https://your-site.pages.dev/gist/octocat/12345/raw/example.js
 ```
 
-**With Custom Filename:**
+**带自定义文件名：**
 ```
 https://your-site.pages.dev/gist/octocat/12345/raw/example.js?filename=my-custom-script.js
 ```
 
-### 2. Text-to-URL Converter
+### 2. 文本到URL转换器
 
-#### Basic URL Pattern
+#### 基本URL模式
 ```
 https://{your-site}.pages.dev/text/{filename.ext}?content={text-content}
 ```
 
-#### With Base64 Encoding
+#### 使用Base64编码
 ```
 https://{your-site}.pages.dev/text/{filename.ext}?b64={base64-encoded-content}
 ```
 
-#### Examples
+#### 示例
 
-**Plain text:**
+**纯文本：**
 ```
 https://your-site.pages.dev/text/hello.txt?content=Hello%20World
 ```
 
-**JavaScript file:**
+**JavaScript文件：**
 ```
 https://your-site.pages.dev/text/script.js?content=function%20test()%20{%20return%20'Hello';%20}
 ```
 
-**JSON with base64:**
+**JSON与base64：**
 ```
 https://your-site.pages.dev/text/data.json?b64=eyAiZGF0YSI6ICJleGFtcGxlIiwgIm51bWJlciI6IDEyMyB9
 ```
 
-### 3. Temporary URL Mapper/Proxy
+### 3. 临时URL映射/代理
 
-#### Parameter-based Pattern
+#### 基于参数的模式
 ```
 https://{your-site}.pages.dev/proxy-direct?url={encoded-target-url}
 ```
 
-#### Base64-encoded Pattern
+#### Base64编码模式
 ```
 https://{your-site}.pages.dev/proxy/{base64-encoded-url}
 ```
 
-#### Examples
+#### 示例
 
-**Parameter-based:**
+**基于参数：**
 ```
 https://your-site.pages.dev/proxy-direct?url=https%3A%2F%2Fexample.com%2Fdata.json
 ```
 
-**Base64-encoded:**
+**Base64编码：**
 ```
 https://your-site.pages.dev/proxy/aHR0cHM6Ly9leGFtcGxlLmNvbS9kYXRhLmpzb24=
 ```
 
-### 4. Persistent URL Mapper/Proxy
+### 4. 持久化URL映射/代理
 
-#### Create Mapping (via API)
+#### 创建映射（通过API）
 ```
-POST to /api/create-persistent-map
-Form data:
-- originalUrl: The URL to map
-- customId: (optional) Custom ID for the mapping
-- baseUrl: Your site URL
+POST 到 /api/create-persistent-map
+表单数据：
+- originalUrl: 要映射的URL
+- customId: （可选）映射的自定义ID
+- baseUrl: 你的网站URL
 ```
 
-#### Access Mapped Content
+#### 访问映射的内容
 ```
 https://{your-site}.pages.dev/map/{mapping-id}
 ```
 
-## Configuration for Persistent Storage
+## 持久化存储配置
 
-To use persistent URL mappings:
+要使用持久化URL映射：
 
-1. Create a KV namespace in your Cloudflare dashboard
-2. Name it "URL_MAPPER_KV" or another name of your choice
-3. Get the namespace ID
-4. In your Pages project settings, add an environment variable:
-   - Key: `URL_MAPPER_KV`
-   - Value: Your KV namespace ID
-5. Redeploy your project
+1. 在Cloudflare仪表板中创建KV命名空间
+2. 命名为 "URL_MAPPER_KV" 或其他你喜欢的名称
+3. 获取命名空间ID
+4. 在你的Pages项目设置中，添加环境变量：
+   - 键：`URL_MAPPER_KV`
+   - 值：你的KV命名空间ID
+5. 重新部署你的项目
 
-## Technical Details
+## 安全功能
 
-- Uses Cloudflare Pages Functions to create dynamic routes
-- Preserves original HTTP headers including content-type
-- Sets Content-Disposition header to force download with custom filename
-- Implements caching strategies:
-  - Gist proxy: 15-minute cache (balance between performance and freshness)
-  - Text-to-URL converter: No cache (ensures fresh content for dynamic text)
-  - URL mappers: No cache (ensures fresh content from target URLs)
-- Supports multiple content types based on file extensions
-- Self-contained temporary URLs (no persistent storage required)
-- Persistent storage option using Cloudflare KV
-- Logs requests for debugging purposes
+要保护你的实例，请访问 `/admin/access-control` 设置身份验证：
 
-## Security Considerations
+1. 默认凭据：用户名 `admin`，密码 `password`
+2. 登录后可更改默认凭据
+3. 建议在生产环境中使用强密码
 
-- This is a simple proxy service without authentication by default
-- All requests are forwarded without modification
-- **Important**: To secure your instance, visit `/admin/access-control` to set up authentication
-- Implement additional security measures if needed for production use
-- Be aware of and comply with GitHub's Terms of Service
-- Sanitizes filenames to prevent path traversal attacks
-- Validates URLs before making requests
-- Requires proper configuration of KV namespace for persistent mappings
-- Consider restricting access to prevent abuse
+## 技术细节
 
-## Limitations
+- 使用Cloudflare Pages Functions创建动态路由
+- 保留原始HTTP头信息，包括内容类型
+- 设置Content-Disposition头以强制使用自定义文件名下载
+- 实施缓存策略：
+  - Gist代理：15分钟缓存（在性能和新鲜度之间平衡）
+  - 文本到URL转换器：无缓存（确保动态文本内容的新鲜度）
+  - URL映射器：无缓存（确保来自目标URL的新鲜内容）
+- 支持基于文件扩展名的多种内容类型
+- 自包含临时URL（无需持久存储）
+- 持久化存储选项使用Cloudflare KV
+- 为调试记录请求
 
-- Does not cache binary files differently from text files
-- No rate limiting implemented (consider adding if needed)
-- Relies on Cloudflare's network and target servers' availability
-- Content size limited by URL length constraints for text-to-URL and temporary URL mapping features
-- Self-contained temporary URLs can become very long for complex target URLs
-- Persistent mappings require Cloudflare KV which has its own limitations and costs
+## 安全注意事项
 
-## License
+- 这是一个没有身份验证的简单代理服务
+- 所有请求都会未经修改地转发
+- 如需生产使用，请实施额外的安全措施
+- 请注意并遵守GitHub的服务条款
+- 清理文件名以防止路径遍历攻击
+- 在发出请求前验证URL
+- 需要正确配置KV命名空间以进行持久化映射
+- 访问 `/admin/access-control` 设置身份验证以保护服务
+
+## 限制
+
+- 二进制文件和文本文件不会分别缓存
+- 未实施速率限制（如有需要可考虑添加）
+- 依赖Cloudflare的网络和目标服务器的可用性
+- 文本到URL和临时URL映射功能受URL长度限制
+- 自包含的临时URL对于复杂的目标URL可能会变得很长
+- 持久化映射需要Cloudflare KV，这有其自身的限制和成本
+
+## 许可证
 
 MIT
