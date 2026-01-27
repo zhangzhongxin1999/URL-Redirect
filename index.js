@@ -200,8 +200,10 @@ export default {
   }
 };
 
-// Separate function to return HTML content
+// --- HTML Content Generation (Updated with Fixes) ---
 function getHtmlPage() {
+  // 注意：在 Worker 的字符串中，客户端 JS 的反引号 ` 和变量符号 $ 需要转义
+  // 以防止后端 JS 尝试解析它们。
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -226,57 +228,6 @@ function getHtmlPage() {
     h1 {
       color: #2c6bed;
       text-align: center;
-    }
-    .usage {
-      background: #f0f8ff;
-      padding: 15px;
-      border-radius: 5px;
-      margin: 20px 0;
-    }
-    .example {
-      font-family: monospace;
-      background: #f4f4f4;
-      padding: 5px 10px;
-      border-radius: 3px;
-      display: inline-block;
-      margin: 5px 0;
-      word-break: break-all;
-    }
-    .instructions {
-      margin: 20px 0;
-    }
-    ol {
-      padding-left: 20px;
-    }
-    li {
-      margin: 10px 0;
-    }
-    .warning {
-      background: #fff3cd;
-      border: 1px solid #ffeaa7;
-      color: #856404;
-      padding: 10px;
-      border-radius: 5px;
-      margin: 15px 0;
-    }
-    .feature-box {
-      background: #e8f4fd;
-      padding: 15px;
-      border-radius: 5px;
-      margin: 15px 0;
-    }
-    .service-section {
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
-      padding: 15px;
-      margin: 15px 0;
-    }
-    .url-generator {
-      background: #f0f8f0;
-      border: 1px solid #c8e6c8;
-      border-radius: 8px;
-      padding: 20px;
-      margin: 20px 0;
     }
     .form-group {
       margin-bottom: 15px;
@@ -309,6 +260,10 @@ function getHtmlPage() {
     button:hover {
       background-color: #45a049;
     }
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
     .auth-button {
       background-color: #2196F3;
     }
@@ -317,6 +272,8 @@ function getHtmlPage() {
     }
     .logout-button {
       background-color: #f44336;
+      float: right; 
+      display: none;
     }
     .logout-button:hover {
       background-color: #da190b;
@@ -365,14 +322,31 @@ function getHtmlPage() {
       background-color: #ffeaea;
       border: 1px solid #f44336;
     }
+    .warning {
+      background: #fff3cd;
+      border: 1px solid #ffeaa7;
+      color: #856404;
+      padding: 10px;
+      border-radius: 5px;
+      margin: 15px 0;
+    }
+    .service-section {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 15px 0;
+    }
+    .instructions, .features {
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>🔄 Universal Content Proxy</h1>
+    
     <div class="warning">
-      <strong>🔒 Security Notice:</strong> For enhanced security, consider restricting access to this service. 
-      Visit <a href="/admin/access-control">admin panel</a> to set up authentication (requires credentials).
+      <strong>🔒 Security Notice:</strong> For enhanced security, ensure your backend validates all requests.
     </div>
     
     <div class="auth-section">
@@ -381,48 +355,41 @@ function getHtmlPage() {
       
       <div id="authStatus" class="auth-status">
         <span id="authStatusText"></span>
-        <button class="logout-button" onclick="logout()" style="float: right; display: none;" id="logoutBtn">Logout</button>
+        <button class="logout-button" id="logoutBtn" onclick="logout()">Logout</button>
       </div>
       
-      <!-- Registration Form -->
       <div class="form-group">
-        <label for="registerUserId">Desired User ID:</label>
+        <label>Desired User ID:</label>
         <input type="text" id="registerUserId" placeholder="e.g., myuser123">
       </div>
-      
       <div class="form-group">
-        <label for="registerEmail">Email (optional):</label>
+        <label>Email (optional):</label>
         <input type="email" id="registerEmail" placeholder="e.g., user@example.com">
       </div>
-      
       <div class="form-group">
-        <label for="registerPassword">Password:</label>
+        <label>Password:</label>
         <input type="password" id="registerPassword" placeholder="Enter password">
       </div>
-      
       <button class="auth-button" onclick="registerUser()">Register</button>
       
-      <!-- Login Form -->
       <div class="form-group" style="margin-top: 20px;">
-        <label for="loginUserId">User ID:</label>
+        <label>User ID:</label>
         <input type="text" id="loginUserId" placeholder="e.g., myuser123">
       </div>
-      
       <div class="form-group">
-        <label for="loginPassword">Password:</label>
+        <label>Password:</label>
         <input type="password" id="loginPassword" placeholder="Enter password">
       </div>
-      
       <button class="auth-button" onclick="loginUser()">Login</button>
     </div>
     
-    <div class="user-management">
+    <div class="user-management service-section">
       <h2>👤 User Management</h2>
       <p>View and manage your mappings</p>
       
       <div class="form-group">
-        <label for="manageUserId">Your User ID:</label>
-        <input type="text" id="manageUserId" placeholder="e.g., myuser123" disabled>
+        <label>Your User ID:</label>
+        <input type="text" id="manageUserId" disabled>
       </div>
       
       <button onclick="viewUserMappings()" disabled>View My Mappings</button>
@@ -435,23 +402,18 @@ function getHtmlPage() {
     
     <div class="service-section">
       <h2>1. 📄 Unified URL Mapping System</h2>
-      <p>Create custom mappings for any URL using your own user ID and custom paths</p>
-      
       <div class="form-group">
-        <label for="targetUrl">Target URL to map:</label>
-        <input type="url" id="targetUrl" placeholder="e.g., https://example.com/data.json or https://gist.githubusercontent.com/user/gist-id/raw/file.js" disabled>
+        <label>Target URL to map:</label>
+        <input type="url" id="targetUrl" placeholder="e.g., https://example.com/data.json" disabled>
       </div>
-      
       <div class="form-group">
-        <label for="userId">Your User ID:</label>
-        <input type="text" id="userId" placeholder="e.g., myuser123" disabled>
+        <label>Your User ID:</label>
+        <input type="text" id="userId" disabled>
       </div>
-      
       <div class="form-group">
-        <label for="customPath">Custom Path:</label>
-        <input type="text" id="customPath" placeholder="e.g., my-api-endpoint or my-gist-file" disabled>
+        <label>Custom Path:</label>
+        <input type="text" id="customPath" placeholder="e.g., my-api-endpoint" disabled>
       </div>
-      
       <button onclick="createUserMapping()" disabled>Create Custom Mapping</button>
       
       <div id="mappingResult" class="result">
@@ -461,113 +423,68 @@ function getHtmlPage() {
       </div>
     </div>
     
-    <div class="persistent-text-generator">
+    <div class="service-section">
       <h2>2. ✍️ Text Content Mapping</h2>
-      <p>Store text content and access it via your custom mapping</p>
-      
       <div class="form-group">
-        <label for="persistentContent">Content:</label>
-        <textarea id="persistentContent" placeholder="在此输入您的文本内容..." disabled></textarea>
+        <label>Content:</label>
+        <textarea id="persistentContent" placeholder="Enter text content here..." disabled></textarea>
       </div>
-      
       <div class="form-group">
-        <label for="persistentFilename">File Name (with extension):</label>
-        <input type="text" id="persistentFilename" value="config.txt" placeholder="例如：config.json, script.js" disabled>
+        <label>File Name:</label>
+        <input type="text" id="persistentFilename" value="config.txt" disabled>
       </div>
-      
       <div class="form-group">
-        <label for="textUserId">Your User ID:</label>
-        <input type="text" id="textUserId" placeholder="e.g., myuser123" disabled>
+        <label>Your User ID:</label>
+        <input type="text" id="textUserId" disabled>
       </div>
-      
       <div class="form-group">
-        <label for="textCustomPath">Custom Path:</label>
-        <input type="text" id="textCustomPath" placeholder="e.g., my-config or my-script" disabled>
+        <label>Custom Path:</label>
+        <input type="text" id="textCustomPath" disabled>
       </div>
-      
       <button onclick="createPersistentText()" disabled>Create Text Mapping</button>
       
       <div id="persistentTextResult" class="result">
         <p><strong>Text Mapping URL:</strong></p>
         <p><a id="persistentTextUrl" href="#" target="_blank"></a></p>
-        <p>Mapping Key: <span id="persistentTextKeyDisplay"></span></p>
       </div>
     </div>
     
-    <div class="qrcode-generator">
+    <div class="service-section">
       <h2>3. 📱 QR Code Generator</h2>
-      <p>Generate QR codes for any URL for mobile scanning:</p>
-      
       <div class="form-group">
-        <label for="qrcodeUrl">URL:</label>
-        <input type="url" id="qrcodeUrl" placeholder="Enter URL to generate QR code for" disabled>
+        <label>URL:</label>
+        <input type="url" id="qrcodeUrl" placeholder="Enter URL" disabled>
       </div>
-      
       <button onclick="generateQRCode()" disabled>Generate QR Code</button>
-      
       <div id="qrcodeResult" class="result">
-        <p><strong>QR Code:</strong></p>
         <div id="qrcodeContainer" style="display:flex; justify-content:center; margin:10px 0;"></div>
       </div>
     </div>
-    
+
     <div class="instructions">
       <h2>How to Use</h2>
       <ol>
-        <li>Register an account or login to get started</li>
-        <li>Create a custom mapping by providing a target URL, your user ID, and a custom path</li>
-        <li>Access your mapped content using the format: <code>https://your-site.pages.dev/m/{userId}/{customPath}</code></li>
-        <li>Use the user management section to view and manage your existing mappings</li>
-        <li>Use the QR code generator to create scannable codes for your URLs</li>
-        <li>All mappings are stored persistently using Cloudflare KV</li>
+        <li>Register or Login first.</li>
+        <li>Choose a service (URL Map or Text Content).</li>
+        <li>Fill in the fields and click Create.</li>
+        <li>Manage your links in the User Management section.</li>
       </ol>
     </div>
-    
-    <div class="warning">
-      <strong>Note:</strong> This proxy is intended to help access legitimate content. Please respect terms of service and applicable laws in your jurisdiction.
-    </div>
-    
-    <div class="features">
-      <h2>Features</h2>
-      <ul>
-        <li>User registration and authentication</li>
-        <li>Unified URL mapping system with user-defined paths</li>
-        <li>Persistent storage using Cloudflare KV</li>
-        <li>Custom user IDs and paths for organized access</li>
-        <li>User management to view and delete mappings</li>
-        <li>Text content storage and retrieval</li>
-        <li>QR code generation for easy mobile access</li>
-        <li>Maintains original content type headers</li>
-        <li>Supports all file types (JavaScript, CSS, JSON, text, etc.)</li>
-        <li>Automatic download with specified filename</li>
-      </ul>
-    </div>
   </div>
-  
+
   <script>
-    // Authentication state
+    // --- Global State ---
     let currentUser = null;
-    
-    // Make functions globally available to HTML onclick attributes
-    window.registerUser = registerUser;
-    window.loginUser = loginUser;
-    window.logout = logout;
-    window.createUserMapping = createUserMapping;
-    window.createPersistentText = createPersistentText;
-    window.generateQRCode = generateQRCode;
-    window.viewUserMappings = viewUserMappings;
-    window.deleteMapping = deleteMapping;
-    
-    // Initialize the page
+
+    // --- Initialization ---
     document.addEventListener('DOMContentLoaded', function() {
-      // Check if user is logged in from localStorage
       const savedUser = localStorage.getItem('currentUser');
       if (savedUser) {
         try {
           currentUser = JSON.parse(savedUser);
           updateAuthStatus(true);
         } catch(e) {
-          console.error('Error parsing saved user data:', e);
+          console.error('Auth Error', e);
           localStorage.removeItem('currentUser');
           updateAuthStatus(false);
         }
@@ -575,73 +492,73 @@ function getHtmlPage() {
         updateAuthStatus(false);
       }
     });
-    
+
+    // --- UI Helpers ---
     function updateAuthStatus(isAuthenticated) {
       const authStatusDiv = document.getElementById('authStatus');
       const authStatusText = document.getElementById('authStatusText');
       const logoutBtn = document.getElementById('logoutBtn');
       
+      // Elements to enable/disable
+      const inputs = [
+        'manageUserId', 'userId', 'targetUrl', 'customPath',
+        'persistentContent', 'persistentFilename', 'textUserId', 'textCustomPath',
+        'qrcodeUrl'
+      ];
+      
+      const actionButtons = document.querySelectorAll('button:not(.auth-button):not(.logout-button)');
+
       if (isAuthenticated && currentUser) {
+        // --- LOGGED IN STATE ---
         authStatusDiv.className = 'auth-status authenticated';
         authStatusText.textContent = 'Logged in as: ' + currentUser.userId;
         logoutBtn.style.display = 'block';
         
-        // Enable forms that require authentication
+        // Auto-fill User IDs
         document.getElementById('manageUserId').value = currentUser.userId;
-        document.getElementById('manageUserId').disabled = false;
         document.getElementById('userId').value = currentUser.userId;
-        document.getElementById('userId').disabled = false;
         document.getElementById('textUserId').value = currentUser.userId;
-        document.getElementById('textUserId').disabled = false;
         
-        // Enable buttons
-        document.querySelectorAll('button').forEach(btn => {
-          // Only disable non-auth buttons
-          if (!btn.classList.contains('auth-button') && 
-              !btn.classList.contains('logout-button') &&
-              !(btn.textContent.trim() === 'Register' || btn.textContent.trim() === 'Login')) {
-            btn.disabled = true;
-          }
+        // Enable inputs
+        inputs.forEach(id => {
+          const el = document.getElementById(id);
+          if(el) el.disabled = false;
         });
+
+        // Enable action buttons
+        actionButtons.forEach(btn => btn.disabled = false);
+
       } else {
+        // --- LOGGED OUT STATE ---
         authStatusDiv.className = 'auth-status unauthenticated';
-        authStatusText.textContent = 'Not logged in. Please register or login to continue.';
+        authStatusText.textContent = 'Not logged in. Please register or login.';
         logoutBtn.style.display = 'none';
         
-        // Disable forms that require authentication
+        // Clear User IDs
         document.getElementById('manageUserId').value = '';
-        document.getElementById('manageUserId').disabled = true;
         document.getElementById('userId').value = '';
-        document.getElementById('userId').disabled = true;
         document.getElementById('textUserId').value = '';
-        document.getElementById('textUserId').disabled = true;
         
-        // Disable buttons except auth buttons and logout button
-        document.querySelectorAll('button').forEach(btn => {
-          // Only disable non-auth buttons
-          if (!btn.classList.contains('auth-button') && 
-              !btn.classList.contains('logout-button') &&
-              !(btn.textContent.trim() === 'Register' || btn.textContent.trim() === 'Login')) {
-            btn.disabled = true;
-          }
+        // Disable inputs
+        inputs.forEach(id => {
+          const el = document.getElementById(id);
+          if(el) el.disabled = true;
         });
+
+        // Disable action buttons
+        actionButtons.forEach(btn => btn.disabled = true);
       }
       
       authStatusDiv.style.display = 'block';
     }
-    
+
+    // --- Auth Functions ---
     async function registerUser() {
-      console.log('registerUser called');
       const userId = document.getElementById('registerUserId').value;
       const email = document.getElementById('registerEmail').value;
       const password = document.getElementById('registerPassword').value;
       
-      console.log('Registration form values:', {userId, email});
-      
-      if (!userId || !password) {
-        alert('User ID and password are required');
-        return;
-      }
+      if (!userId || !password) return alert('User ID and password are required');
       
       try {
         const formData = new FormData();
@@ -649,382 +566,245 @@ function getHtmlPage() {
         if (email) formData.append('email', email);
         formData.append('password', password);
         
-        console.log('Sending registration request');
-        const response = await fetch('/auth/register', {
-          method: 'POST',
-          body: formData
-        });
-        
-        console.log('Registration response:', response.status);
+        const response = await fetch('/auth/register', { method: 'POST', body: formData });
         const data = await response.json();
-        console.log('Registration response data:', data);
         
         if (data.success) {
-          alert('Registration successful! You can now login.');
-          document.getElementById('registerUserId').value = '';
-          document.getElementById('registerEmail').value = '';
+          alert('Registration successful! Please login.');
           document.getElementById('registerPassword').value = '';
         } else {
           alert('Registration failed: ' + data.error);
         }
-      } catch (error) {
-        console.error('Error registering user:', error);
-        alert('Error registering user: ' + error.message);
+      } catch (e) {
+        alert('System Error: ' + e.message);
       }
     }
-    
+
     async function loginUser() {
-      console.log('loginUser called');
       const userId = document.getElementById('loginUserId').value;
       const password = document.getElementById('loginPassword').value;
       
-      console.log('Login form values:', {userId});
-      
-      if (!userId || !password) {
-        alert('User ID and password are required');
-        return;
-      }
+      if (!userId || !password) return alert('Missing credentials');
       
       try {
         const formData = new FormData();
         formData.append('userId', userId);
         formData.append('password', password);
         
-        console.log('Sending login request');
-        const response = await fetch('/auth/login', {
-          method: 'POST',
-          body: formData
-        });
-        
-        console.log('Login response:', response.status);
+        const response = await fetch('/auth/login', { method: 'POST', body: formData });
         const data = await response.json();
-        console.log('Login response data:', data);
         
         if (data.success) {
-          // Store user info in localStorage
           currentUser = { userId: userId };
           localStorage.setItem('currentUser', JSON.stringify(currentUser));
-          
           updateAuthStatus(true);
           alert('Login successful!');
-          document.getElementById('loginUserId').value = '';
           document.getElementById('loginPassword').value = '';
         } else {
           alert('Login failed: ' + data.error);
         }
-      } catch (error) {
-        console.error('Error logging in user:', error);
-        alert('Error logging in user: ' + error.message);
+      } catch (e) {
+        alert('System Error: ' + e.message);
       }
     }
-    
+
     function logout() {
       currentUser = null;
       localStorage.removeItem('currentUser');
       updateAuthStatus(false);
-      alert('Logged out successfully!');
+      alert('Logged out.');
     }
-    
+
+    // --- Core Features ---
     async function createUserMapping() {
-      console.log('createUserMapping called');
-      if (!currentUser) {
-        alert('Please login first');
-        console.log('User not logged in');
-        return;
-      }
+      if (!currentUser) return alert('Please login first');
       
       const targetUrl = document.getElementById('targetUrl').value;
       const userId = document.getElementById('userId').value;
       const customPath = document.getElementById('customPath').value;
       
-      console.log('Form values:', {targetUrl, userId, customPath});
-      
-      if (!targetUrl) {
-        alert('Please enter the target URL to map');
-        return;
-      }
-      
-      if (!userId) {
-        alert('Please enter your user ID');
-        return;
-      }
-      
-      if (!customPath) {
-        alert('Please enter a custom path');
-        return;
-      }
+      if (!targetUrl || !customPath) return alert('Missing fields');
       
       try {
-        // Use the API endpoint to create a persistent mapping
         const formData = new FormData();
         formData.append('originalUrl', targetUrl);
         formData.append('userId', userId);
         formData.append('customPath', customPath);
         
-        console.log('Sending request to /api/create-user-mapping');
-        const response = await fetch('/api/create-user-mapping', {
-          method: 'POST',
-          body: formData
-        });
-        
-        console.log('Response received:', response.status);
+        const response = await fetch('/api/create-user-mapping', { method: 'POST', body: formData });
         const data = await response.json();
-        console.log('Response data:', data);
         
         if (data.success) {
-          // Update the result section
-          document.getElementById('mappingUrl').href = data.mappedUrl;
-          document.getElementById('mappingUrl').textContent = data.mappedUrl;
+          const resultDiv = document.getElementById('mappingResult');
+          const link = document.getElementById('mappingUrl');
+          link.href = data.mappedUrl;
+          link.textContent = data.mappedUrl;
           document.getElementById('mappingKeyDisplay').textContent = data.mappingKey;
-          
-          document.getElementById('mappingResult').classList.add('show');
-          
-          // Add QR code button
-          setTimeout(() => {
-            addQRCodeToElement('mappingUrl');
-          }, 100);
+          resultDiv.classList.add('show');
+          addQRCodeToElement('mappingUrl');
         } else {
           alert('Error: ' + data.error);
         }
-      } catch (error) {
-        console.error('Error creating user mapping:', error);
-        alert('Error creating user mapping: ' + error.message);
+      } catch (e) {
+        alert('Error: ' + e.message);
       }
     }
-    
+
     async function createPersistentText() {
-      console.log('createPersistentText called');
-      if (!currentUser) {
-        alert('Please login first');
-        console.log('User not logged in');
-        return;
-      }
+      if (!currentUser) return alert('Please login first');
       
       const content = document.getElementById('persistentContent').value;
       const filename = document.getElementById('persistentFilename').value;
       const userId = document.getElementById('textUserId').value;
       const customPath = document.getElementById('textCustomPath').value;
       
-      console.log('Form values:', {content: content?.substring(0, 50) + '...', filename, userId, customPath});
-      
-      if (!content) {
-        alert('Please enter the content');
-        return;
-      }
-      
-      if (!filename) {
-        alert('Please enter a filename');
-        return;
-      }
-      
-      if (!userId) {
-        alert('Please enter your user ID');
-        return;
-      }
-      
-      if (!customPath) {
-        alert('Please enter a custom path');
-        return;
-      }
+      if (!content || !filename || !customPath) return alert('Missing fields');
       
       try {
-        // Use the API endpoint to create persistent text content
         const formData = new FormData();
         formData.append('content', content);
         formData.append('filename', filename);
         formData.append('userId', userId);
         formData.append('customPath', customPath);
         
-        console.log('Sending request to /api/create-persistent-text');
-        const response = await fetch('/api/create-persistent-text', {
-          method: 'POST',
-          body: formData
-        });
-        
-        console.log('Response received:', response.status);
+        const response = await fetch('/api/create-persistent-text', { method: 'POST', body: formData });
         const data = await response.json();
-        console.log('Response data:', data);
         
         if (data.success) {
-          // Update the result section
-          document.getElementById('persistentTextUrl').href = data.persistentUrl;
-          document.getElementById('persistentTextUrl').textContent = data.persistentUrl;
-          document.getElementById('persistentTextKeyDisplay').textContent = data.mappingKey;
-          
-          document.getElementById('persistentTextResult').classList.add('show');
-          
-          // Add QR code button
-          setTimeout(() => {
-            addQRCodeToElement('persistentTextUrl');
-          }, 100);
+          const resultDiv = document.getElementById('persistentTextResult');
+          const link = document.getElementById('persistentTextUrl');
+          link.href = data.persistentUrl;
+          link.textContent = data.persistentUrl;
+          resultDiv.classList.add('show');
+          addQRCodeToElement('persistentTextUrl');
         } else {
           alert('Error: ' + data.error);
         }
-      } catch (error) {
-        console.error('Error creating persistent text:', error);
-        alert('Error creating persistent text: ' + error.message);
+      } catch (e) {
+        alert('Error: ' + e.message);
       }
     }
-    
-    async function generateQRCode() {
-      if (!currentUser) {
-        alert('Please login first');
-        return;
-      }
-      
-      const url = document.getElementById('qrcodeUrl').value;
-      
-      if (!url) {
-        alert('Please enter a URL');
-        return;
-      }
-      
-      try {
-        // Validate URL
-        new URL(url);
-        
-        // Generate QR code using the API
-        const qrCodeUrl = '/qrcode/generate?url=' + encodeURIComponent(url);
-        
-        // Create an image element for the QR code
-        const img = document.createElement('img');
-        img.src = qrCodeUrl;
-        img.alt = 'QR Code';
-        img.style.maxWidth = '300px';
-        img.style.height = 'auto';
-        img.onerror = function() {
-          alert('Error generating QR code');
-        };
-        
-        // Clear previous QR code and add the new one
-        const container = document.getElementById('qrcodeContainer');
-        container.innerHTML = '';
-        container.appendChild(img);
-        
-        // Show the result div
-        document.getElementById('qrcodeResult').classList.add('show');
-      } catch (error) {
-        alert('Invalid URL: ' + error.message);
-      }
-    }
-    
+
+    // --- Viewing & Deleting (The Fixed Part) ---
     async function viewUserMappings() {
-      if (!currentUser) {
-        alert('Please login first');
-        return;
-      }
-      
-      const userId = document.getElementById('manageUserId').value;
-      
-      if (!userId) {
-        alert('Please enter your user ID');
-        return;
-      }
+      if (!currentUser) return alert('Please login first');
       
       try {
-        const response = await fetch('/api/user/' + encodeURIComponent(userId) + '/mappings');
+        const response = await fetch(\`/api/user/\${encodeURIComponent(currentUser.userId)}/mappings\`);
         const data = await response.json();
         
         if (data.success) {
-          const mappingsListDiv = document.getElementById('mappingsList');
-          mappingsListDiv.innerHTML = '';
+          const listDiv = document.getElementById('mappingsList');
+          listDiv.innerHTML = '';
           
           if (data.mappings.length === 0) {
-            mappingsListDiv.innerHTML = '<p>No mappings found for this user.</p>';
+            listDiv.innerHTML = '<p>No mappings found.</p>';
           } else {
             data.mappings.forEach(mapping => {
-              const mappingItem = document.createElement('div');
-              mappingItem.className = 'mapping-item';
+              const item = document.createElement('div');
+              item.className = 'mapping-item';
               
-              let contentPreview = '';
-              if (mapping.type === 'url_mapping') {
-                contentPreview = '<strong>Type:</strong> URL Mapping<br>' +
-                                 '<strong>Original URL:</strong> ' + mapping.originalUrl + '<br>';
-              } else if (mapping.type === 'text_content') {
-                contentPreview = '<strong>Type:</strong> Text Content<br>' +
-                                 '<strong>Filename:</strong> ' + mapping.filename + '<br>' +
-                                 '<strong>Content Preview:</strong> ' + mapping.contentPreview + '<br>';
-              }
-              
-              // Escape single quotes in userId and customPath to prevent breaking the onclick attribute
-              const escapedUserId = userId.replace(/'/g, "\\'");
-              const escapedCustomPath = mapping.customPath.replace(/'/g, "\\'");
-              
-              mappingItem.innerHTML = 
-                '<div>' +
-                  '<strong>Custom Path:</strong> ' + mapping.customPath + '<br>' +
-                  contentPreview +
-                  '<strong>Created:</strong> ' + new Date(mapping.createdAt).toLocaleString() + '<br>' +
-                  '<strong>Full Path:</strong> /m/' + escapedUserId + '/' + escapedCustomPath + '<br>' +
-                  '<a href="/m/' + escapedUserId + '/' + escapedCustomPath + '" target="_blank">Open</a>' +
-                  '<button class="delete-btn" onclick="deleteMapping(\'' + escapedUserId + '\', \'' + escapedCustomPath + '\')">Delete</button>' +
-                '</div>';
-              
-              mappingsListDiv.appendChild(mappingItem);
+              // FIX: Using Template Literals with escaped backticks for Worker environment
+              item.innerHTML = \`
+                <div>
+                  <strong>Path:</strong> \${mapping.customPath}<br>
+                  <strong>Type:</strong> \${mapping.type}<br>
+                  <strong>Created:</strong> \${new Date(mapping.createdAt).toLocaleString()}<br>
+                  <div style="margin-top:5px;">
+                    <a href="/m/\${currentUser.userId}/\${mapping.customPath}" target="_blank" style="margin-right:10px;">Open</a>
+                    <button class="delete-btn" onclick="deleteMapping('\${currentUser.userId}', '\${mapping.customPath}')">Delete</button>
+                  </div>
+                </div>
+              \`;
+              listDiv.appendChild(item);
             });
           }
-          
           document.getElementById('userMappingsResult').classList.add('show');
         } else {
           alert('Error: ' + data.error);
         }
-      } catch (error) {
-        alert('Error fetching user mappings: ' + error.message);
+      } catch (e) {
+        alert('Fetch Error: ' + e.message);
       }
     }
-    
-    async function deleteMapping(userId, customPath) {
-      if (!currentUser) {
-        alert('Please login first');
-        return;
-      }
-      
-      if (!confirm('Are you sure you want to delete the mapping "' + customPath + '" for user "' + userId + '"?')) {
-        return;
-      }
+
+    async function deleteMapping(userId, path) {
+      if (!currentUser) return alert('Please login first');
+      if (!confirm(\`Are you sure you want to delete mapping: \${path}?\`)) return;
       
       try {
-        const response = await fetch('/api/user/' + encodeURIComponent(userId) + '/mappings/' + encodeURIComponent(customPath) + '/delete', {
-          method: 'DELETE'
-        });
-        
+        const response = await fetch(\`/api/user/\${encodeURIComponent(userId)}/mappings/\${encodeURIComponent(path)}/delete\`, { method: 'DELETE' });
         const data = await response.json();
         
         if (data.success) {
-          alert('Mapping deleted successfully!');
-          // Refresh the mappings list
-          viewUserMappings();
+          alert('Deleted successfully');
+          viewUserMappings(); // Refresh list
         } else {
           alert('Error: ' + data.error);
         }
-      } catch (error) {
-        alert('Error deleting mapping: ' + error.message);
+      } catch (e) {
+        alert('Delete Error: ' + e.message);
       }
     }
-    
-    // Add QR code functionality to existing URL generators
+
+    // --- QR Code ---
+    function generateQRCode() {
+      if (!currentUser) return alert('Please login first');
+      const url = document.getElementById('qrcodeUrl').value;
+      if (!url) return alert('Enter URL');
+      
+      try {
+        new URL(url); // Validate
+        const img = document.createElement('img');
+        img.src = '/qrcode/generate?url=' + encodeURIComponent(url);
+        img.style.maxWidth = '300px';
+        
+        const container = document.getElementById('qrcodeContainer');
+        container.innerHTML = '';
+        container.appendChild(img);
+        document.getElementById('qrcodeResult').classList.add('show');
+      } catch (e) {
+        alert('Invalid URL');
+      }
+    }
+
     function addQRCodeToElement(elementId) {
       const element = document.getElementById(elementId);
+      // Remove existing QR button if any to prevent duplicates
+      if (element.nextSibling && element.nextSibling.tagName === 'BUTTON') {
+        element.nextSibling.remove();
+      }
+      
       if (element && element.href) {
-        // Create a button to generate QR code for this specific URL
         const qrButton = document.createElement('button');
         qrButton.textContent = 'QR';
-        qrButton.onclick = function() {
-          const qrCodeUrl = '/qrcode/generate?url=' + encodeURIComponent(element.href);
-          window.open(qrCodeUrl, '_blank', 'width=350,height=400');
-        };
         qrButton.style.marginLeft = '10px';
-        qrButton.style.verticalAlign = 'middle';
+        qrButton.style.padding = '2px 8px';
+        qrButton.style.fontSize = '12px';
+        qrButton.onclick = function() {
+          window.open('/qrcode/generate?url=' + encodeURIComponent(element.href), '_blank');
+        };
         element.parentNode.appendChild(qrButton);
       }
     }
-  </script>
+
+    // --- Expose functions to window for HTML onclick attributes ---
+    window.registerUser = registerUser;
+    window.loginUser = loginUser;
+    window.logout = logout;
+    window.createUserMapping = createUserMapping;
+    window.createPersistentText = createPersistentText;
+    window.viewUserMappings = viewUserMappings;
+    window.deleteMapping = deleteMapping;
+    window.generateQRCode = generateQRCode;
+
   </script>
 </body>
 </html>`;
 }
 
-// Helper functions for API endpoints
+// --- Helper Functions for API Logic ---
+
 async function handleCreateUserMapping(request, env) {
   if (request.method === 'OPTIONS') {
     return handleCorsPreflight();
