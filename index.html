@@ -115,6 +115,25 @@
     .result.show {
       display: block;
     }
+    .mapping-item {
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+    }
+    .delete-btn {
+      background-color: #f44336;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 3px;
+      cursor: pointer;
+      float: right;
+    }
+    .delete-btn:hover {
+      background-color: #da190b;
+    }
   </style>
 </head>
 <body>
@@ -123,6 +142,23 @@
     <div class="warning">
       <strong>🔒 Security Notice:</strong> For enhanced security, consider restricting access to this service. 
       Visit <a href="/admin/access-control">admin panel</a> to set up authentication (requires credentials).
+    </div>
+    
+    <div class="user-management">
+      <h2>👤 User Management</h2>
+      <p>View and manage your mappings</p>
+      
+      <div class="form-group">
+        <label for="manageUserId">Your User ID:</label>
+        <input type="text" id="manageUserId" placeholder="e.g., myuser123">
+      </div>
+      
+      <button onclick="viewUserMappings()">View My Mappings</button>
+      
+      <div id="userMappingsResult" class="result">
+        <p><strong>Your Mappings:</strong></p>
+        <div id="mappingsList"></div>
+      </div>
     </div>
     
     <div class="service-section">
@@ -218,6 +254,7 @@
       <ol>
         <li>Create a custom mapping by providing a target URL, your user ID, and a custom path</li>
         <li>Access your mapped content using the format: <code>https://your-site.pages.dev/m/{userId}/{customPath}</code></li>
+        <li>Use the user management section to view and manage your existing mappings</li>
         <li>Use the QR code generator to create scannable codes for your URLs</li>
         <li>All mappings are stored persistently using Cloudflare KV</li>
       </ol>
@@ -233,6 +270,7 @@
         <li>Unified URL mapping system with user-defined paths</li>
         <li>Persistent storage using Cloudflare KV</li>
         <li>Custom user IDs and paths for organized access</li>
+        <li>User management to view and delete mappings</li>
         <li>Text content storage and retrieval</li>
         <li>QR code generation for easy mobile access</li>
         <li>Maintains original content type headers</li>
@@ -406,6 +444,87 @@
         document.getElementById('qrcodeResult').classList.add('show');
       } catch (error) {
         alert('Invalid URL: ' + error.message);
+      }
+    }
+    
+    async function viewUserMappings() {
+      const userId = document.getElementById('manageUserId').value;
+      
+      if (!userId) {
+        alert('Please enter your user ID');
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/user/${encodeURIComponent(userId)}/mappings`);
+        const data = await response.json();
+        
+        if (data.success) {
+          const mappingsListDiv = document.getElementById('mappingsList');
+          mappingsListDiv.innerHTML = '';
+          
+          if (data.mappings.length === 0) {
+            mappingsListDiv.innerHTML = '<p>No mappings found for this user.</p>';
+          } else {
+            data.mappings.forEach(mapping => {
+              const mappingItem = document.createElement('div');
+              mappingItem.className = 'mapping-item';
+              
+              let contentPreview = '';
+              if (mapping.type === 'url_mapping') {
+                contentPreview = `<strong>Type:</strong> URL Mapping<br>
+                                  <strong>Original URL:</strong> ${mapping.originalUrl}<br>`;
+              } else if (mapping.type === 'text_content') {
+                contentPreview = `<strong>Type:</strong> Text Content<br>
+                                  <strong>Filename:</strong> ${mapping.filename}<br>
+                                  <strong>Content Preview:</strong> ${mapping.contentPreview}<br>`;
+              }
+              
+              mappingItem.innerHTML = `
+                <div>
+                  <strong>Custom Path:</strong> ${mapping.customPath}<br>
+                  ${contentPreview}
+                  <strong>Created:</strong> ${new Date(mapping.createdAt).toLocaleString()}<br>
+                  <strong>Full Path:</strong> /m/${userId}/${mapping.customPath}<br>
+                  <a href="/m/${userId}/${mapping.customPath}" target="_blank">Open</a>
+                  <button class="delete-btn" onclick="deleteMapping('${userId}', '${mapping.customPath}')">Delete</button>
+                </div>
+              `;
+              
+              mappingsListDiv.appendChild(mappingItem);
+            });
+          }
+          
+          document.getElementById('userMappingsResult').classList.add('show');
+        } else {
+          alert('Error: ' + data.error);
+        }
+      } catch (error) {
+        alert('Error fetching user mappings: ' + error.message);
+      }
+    }
+    
+    async function deleteMapping(userId, customPath) {
+      if (!confirm(`Are you sure you want to delete the mapping "${customPath}" for user "${userId}"?`)) {
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/user/${encodeURIComponent(userId)}/mappings/${encodeURIComponent(customPath)}/delete`, {
+          method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          alert('Mapping deleted successfully!');
+          // Refresh the mappings list
+          viewUserMappings();
+        } else {
+          alert('Error: ' + data.error);
+        }
+      } catch (error) {
+        alert('Error deleting mapping: ' + error.message);
       }
     }
     

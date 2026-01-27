@@ -71,6 +71,17 @@ export async function onRequest(context) {
     // Create the mapping key in the format: user:{userId}:path:{customPath}
     const mappingKey = `user:${userId}:path:${customPath}`;
     
+    // Check if this mapping already exists
+    const existingMapping = await env.URL_MAPPER_KV.get(mappingKey);
+    if (existingMapping) {
+      return new Response(JSON.stringify({ 
+        error: 'A mapping with this user ID and custom path already exists' 
+      }), {
+        status: 409, // Conflict
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
     // Store the original URL in KV with the mapping key
     const mappingData = {
       originalUrl: originalUrl,
@@ -81,6 +92,26 @@ export async function onRequest(context) {
     };
     
     await env.URL_MAPPER_KV.put(mappingKey, JSON.stringify(mappingData));
+    
+    // Add this mapping to the user's list of mappings
+    // First get the current list of mappings for this user
+    const userMappingsListKey = `user:${userId}:mappings:list`;
+    let userMappingsList = [];
+    const existingList = await env.URL_MAPPER_KV.get(userMappingsListKey);
+    if (existingList) {
+      userMappingsList = JSON.parse(existingList);
+    }
+    
+    // Add the new mapping to the list
+    userMappingsList.push({
+      mappingKey: mappingKey,
+      customPath: customPath,
+      createdAt: new Date().toISOString(),
+      type: 'url_mapping'
+    });
+    
+    // Update the user's list of mappings
+    await env.URL_MAPPER_KV.put(userMappingsListKey, JSON.stringify(userMappingsList));
     
     // Create the mapped URL
     const mappedUrl = `${baseUrl}/m/${userId}/${customPath}`;
