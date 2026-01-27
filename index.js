@@ -183,6 +183,12 @@ export default {
         return handleQrCodeGeneration(request);
       }
     }
+    // Handle admin access control
+    else if (path.startsWith('/admin/')) {
+      if (path === '/admin/access-control') {
+        return handleAccessControlPage();
+      }
+    }
     // Serve the main page
     else {
       return new Response(getHtmlPage(), {
@@ -1596,6 +1602,173 @@ async function handleQrCodeGeneration(request) {
       headers: { 'Content-Type': 'text/plain' }
     });
   }
+}
+
+function handleAccessControlPage() {
+  const accessControlPage = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Access Control Panel</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+      color: #333;
+    }
+    .container {
+      background: white;
+      border-radius: 10px;
+      padding: 30px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #d9534f;
+      text-align: center;
+    }
+    .warning {
+      background: #fff3cd;
+      border: 1px solid #ffeaa7;
+      color: #856404;
+      padding: 15px;
+      border-radius: 5px;
+      margin: 20px 0;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input[type="password"], select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #d9534f;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #c9302c;
+    }
+    .success {
+      background: #d4edda;
+      border: 1px solid #c3e6c3;
+      color: #155724;
+      padding: 10px;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+    .error {
+      background: #f8d7da;
+      border: 1px solid #f5c6cb;
+      color: #721c24;
+      padding: 10px;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+    .access-list {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #f8f9fa;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔐 Admin Access Control</h1>
+    <div class="warning">
+      <strong>Warning:</strong> This feature is not fully implemented in the current version. 
+      The access control functionality requires additional backend implementation.
+    </div>
+    
+    <h2>Configure Access Settings</h2>
+    <p>Set up authentication requirements for this service:</p>
+    
+    <div class="form-group">
+      <label for="accessLevel">Access Level:</label>
+      <select id="accessLevel">
+        <option value="public">Public Access (No Authentication)</option>
+        <option value="registered-users">Registered Users Only</option>
+        <option value="whitelist">Whitelisted Users Only</option>
+        <option value="private">Private (Admin Only)</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label for="adminPassword">Admin Password:</label>
+      <input type="password" id="adminPassword" placeholder="Enter admin password to apply changes">
+    </div>
+    
+    <button onclick="applySettings()">Apply Settings</button>
+    
+    <div id="resultMessage"></div>
+    
+    <div class="access-list">
+      <h3>Current Access Configuration</h3>
+      <p><strong>Status:</strong> Currently, this service allows public access with optional user registration.</p>
+      <p><strong>Requirements:</strong> Users can register accounts to create personalized mappings.</p>
+      <p><strong>Security:</strong> All mappings are identified by user ID, providing basic separation between users.</p>
+    </div>
+    
+    <div style="margin-top: 30px; text-align: center; color: #6c757d;">
+      <p>Note: Full access control features require additional configuration in the Worker environment variables.</p>
+      <p><a href="/">← Back to Main Page</a></p>
+    </div>
+  </div>
+  
+  <script>
+    function applySettings() {
+      const accessLevel = document.getElementById('accessLevel').value;
+      const adminPassword = document.getElementById('adminPassword').value;
+      
+      if (!adminPassword) {
+        showMessage('Please enter the admin password to apply changes.', 'error');
+        return;
+      }
+      
+      // In a real implementation, this would make an API call to save settings
+      // For now, we'll just simulate the action
+      setTimeout(() => {
+        showMessage(
+          'Access control settings would be applied in a complete implementation.\\n' +
+          'Current selection: ' + accessLevel + '\\n' +
+          'This requires additional backend and configuration changes.',
+          'success'
+        );
+      }, 500);
+    }
+    
+    function showMessage(text, type) {
+      const resultDiv = document.getElementById('resultMessage');
+      resultDiv.textContent = text;
+      resultDiv.className = type;
+      resultDiv.style.display = 'block';
+    }
+  </script>
+</body>
+</html>`;
+  
+  return new Response(accessControlPage, {
+    headers: {
+      'Content-Type': 'text/html',
+    }
+  });
 }
 
 function handleCorsPreflight() {
