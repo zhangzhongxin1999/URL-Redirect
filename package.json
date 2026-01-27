@@ -1,0 +1,23 @@
+{
+  "name": "gist-proxy",
+  "version": "1.0.0",
+  "description": "A proxy service for GitHub Gist raw content",
+  "main": "index.html",
+  "scripts": {
+    "dev": "echo 'Development server not required for static site'",
+    "build": "echo 'Build not needed for static site'",
+    "deploy": "wrangler pages deploy"
+  },
+  "keywords": [
+    "cloudflare-pages",
+    "github-gist",
+    "proxy",
+    "content-delivery"
+  ],
+  "author": "Clawdbot Assistant",
+  "license": "MIT",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20230419.0",
+    "wrangler": "^3.0.0"
+  }
+}
