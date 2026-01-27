@@ -584,8 +584,8 @@ function getHtmlPage() {
         document.getElementById('textUserId').value = currentUser.userId;
         document.getElementById('textUserId').disabled = false;
         
-        // Enable buttons
-        document.querySelectorAll('button:not(.auth-button):not(.logout-button)').forEach(btn => {
+        // Enable all buttons
+        document.querySelectorAll('button').forEach(btn => {
           btn.disabled = false;
         });
       } else {
@@ -601,9 +601,14 @@ function getHtmlPage() {
         document.getElementById('textUserId').value = '';
         document.getElementById('textUserId').disabled = true;
         
-        // Disable buttons
-        document.querySelectorAll('button:not(.auth-button):not(.logout-button)').forEach(btn => {
-          btn.disabled = true;
+        // Disable buttons except auth buttons and logout button
+        document.querySelectorAll('button').forEach(btn => {
+          // Only disable non-auth buttons
+          if (!btn.classList.contains('auth-button') && 
+              !btn.classList.contains('logout-button') &&
+              !(btn.textContent.trim() === 'Register' || btn.textContent.trim() === 'Login')) {
+            btn.disabled = true;
+          }
         });
       }
       
