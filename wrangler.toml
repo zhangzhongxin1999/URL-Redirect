@@ -1,9 +1,7 @@
 name = "url-redirect"
 compatibility_date = "2023-10-25"
-pages_build_output_dir = "."
 
 # Bind the KV namespace for user-defined mappings
 [[kv_namespaces]]
 binding = "URL_MAPPER_KV"
 id = "7cdf42435f374e909af15b3243dbbd92"
-preview_id = "7cdf42435f374e909af15b3243dbbd92"
