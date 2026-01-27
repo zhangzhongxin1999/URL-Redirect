@@ -2,7 +2,7 @@
 import { nanoid } from 'https://cdn.jsdelivr.net/npm/nanoid@4.0.0/nanoid.js';
 
 export async function onRequest(context) {
-  const { request, env } = context;
+  const { request, env, nextUrl } = context;
   
   if (request.method === 'OPTIONS') {
     // Handle CORS preflight request
@@ -36,7 +36,6 @@ export async function onRequest(context) {
     const filename = formData.get('filename') || 'text-content.txt';
     const userId = formData.get('userId');
     const customPath = formData.get('customPath');
-    const baseUrl = formData.get('baseUrl') || 'https://your-site.pages.dev';
     
     if (!content) {
       return new Response(JSON.stringify({ error: 'Content is required' }), {
@@ -80,7 +79,7 @@ export async function onRequest(context) {
     const existingMapping = await env.URL_MAPPER_KV.get(mappingKey);
     if (existingMapping) {
       return new Response(JSON.stringify({ 
-        error: 'A mapping with this user ID and custom path already exists' 
+        error: 'A mapping with this user ID and customPath already exists' 
       }), {
         status: 409, // Conflict
         headers: { 'Content-Type': 'application/json' }
@@ -119,6 +118,9 @@ export async function onRequest(context) {
     
     // Update the user's list of mappings
     await env.URL_MAPPER_KV.put(userMappingsListKey, JSON.stringify(userMappingsList));
+    
+    // Derive the base URL from the request
+    const baseUrl = `${nextUrl.protocol}//${nextUrl.host}`;
     
     // Create the persistent URL
     const persistentUrl = `${baseUrl}/m/${userId}/${customPath}`;

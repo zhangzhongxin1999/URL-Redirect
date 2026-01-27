@@ -83,7 +83,6 @@ POST 到 /api/create-user-mapping
 - originalUrl: 要映射的原始URL（如 https://example.com/data.json 或 https://gist.githubusercontent.com/...）
 - userId: 你的用户ID（如 myuser123）
 - customPath: 自定义路径（如 my-api-endpoint 或 my-gist-file）
-- baseUrl: 你的网站URL（如 https://your-site.pages.dev）
 ```
 
 #### 访问映射的内容
@@ -111,7 +110,6 @@ POST 到 /api/create-persistent-text
 - filename: 文件名（如 config.json）
 - userId: 你的用户ID（如 myuser123）
 - customPath: 自定义路径（如 my-config 或 my-script）
-- baseUrl: 你的网站URL（如 https://your-site.pages.dev）
 ```
 
 #### 访问文本内容

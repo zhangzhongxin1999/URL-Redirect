@@ -248,11 +248,6 @@
         <input type="text" id="customPath" placeholder="e.g., my-api-endpoint or my-gist-file" disabled>
       </div>
       
-      <div class="form-group">
-        <label for="siteUrl">Your Site URL:</label>
-        <input type="url" id="siteUrl" value="https://your-site.pages.dev" placeholder="e.g., https://your-site.pages.dev" disabled>
-      </div>
-      
       <button onclick="createUserMapping()" disabled>Create Custom Mapping</button>
       
       <div id="mappingResult" class="result">
@@ -284,11 +279,6 @@
       <div class="form-group">
         <label for="textCustomPath">Custom Path:</label>
         <input type="text" id="textCustomPath" placeholder="e.g., my-config or my-script" disabled>
-      </div>
-      
-      <div class="form-group">
-        <label for="persistentTextSiteUrl">Your Site URL:</label>
-        <input type="url" id="persistentTextSiteUrl" value="https://your-site.pages.dev" placeholder="例如：https://your-site.pages.dev" disabled>
       </div>
       
       <button onclick="createPersistentText()" disabled>Create Text Mapping</button>
@@ -498,7 +488,6 @@
       const targetUrl = document.getElementById('targetUrl').value;
       const userId = document.getElementById('userId').value;
       const customPath = document.getElementById('customPath').value;
-      const siteUrl = document.getElementById('siteUrl').value;
       
       if (!targetUrl) {
         alert('Please enter the target URL to map');
@@ -515,18 +504,12 @@
         return;
       }
       
-      if (!siteUrl) {
-        alert('Please enter your site URL');
-        return;
-      }
-      
       try {
         // Use the API endpoint to create a persistent mapping
         const formData = new FormData();
         formData.append('originalUrl', targetUrl);
         formData.append('userId', userId);
         formData.append('customPath', customPath);
-        formData.append('baseUrl', siteUrl);
         
         const response = await fetch('/api/create-user-mapping', {
           method: 'POST',
@@ -565,7 +548,6 @@
       const filename = document.getElementById('persistentFilename').value;
       const userId = document.getElementById('textUserId').value;
       const customPath = document.getElementById('textCustomPath').value;
-      const siteUrl = document.getElementById('persistentTextSiteUrl').value;
       
       if (!content) {
         alert('Please enter the content');
@@ -587,11 +569,6 @@
         return;
       }
       
-      if (!siteUrl) {
-        alert('Please enter your site URL');
-        return;
-      }
-      
       try {
         // Use the API endpoint to create persistent text content
         const formData = new FormData();
@@ -599,7 +576,6 @@
         formData.append('filename', filename);
         formData.append('userId', userId);
         formData.append('customPath', customPath);
-        formData.append('baseUrl', siteUrl);
         
         const response = await fetch('/api/create-persistent-text', {
           method: 'POST',
