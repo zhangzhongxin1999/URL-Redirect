@@ -24,7 +24,7 @@ export default {
         
         try {
           // Create the mapping key in the format: user:{userId}:path:{customPath}
-          const mappingKey = `user:${userId}:path:${customPath}`;
+          const mappingKey = 'user:' + userId + ':path:' + customPath;
           
           // Look up the stored data associated with this mapping
           const storedDataJson = await env.URL_MAPPER_KV.get(mappingKey);
@@ -66,7 +66,7 @@ export default {
             const response = await fetch(originalUrl);
             
             if (!response.ok) {
-              return new Response(`Failed to fetch content: ${response.status} ${response.statusText}`, {
+              return new Response('Failed to fetch content: ' + response.status + ' ' + response.statusText, {
                 status: response.status,
                 headers: { 'Content-Type': 'text/plain' }
               });
@@ -91,7 +91,7 @@ export default {
             
             // If there's a filename in the original URL, set it as a download
             if (filename && filename.includes('.')) {
-              responseHeaders.set('Content-Disposition', `attachment; filename="${filename}"`);
+              responseHeaders.set('Content-Disposition', 'attachment; filename="' + filename + '"');
             }
             
             // Add security headers
@@ -108,7 +108,7 @@ export default {
               headers: {
                 'Content-Type': storedData.contentType,
                 'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
-                'Content-Disposition': `attachment; filename="${storedData.filename}"`,
+                'Content-Disposition': 'attachment; filename="' + storedData.filename + '"',
                 'Access-Control-Allow-Origin': '*'
               }
             });
@@ -120,7 +120,7 @@ export default {
           }
         } catch (error) {
           console.error('Error in user-defined mapping:', error);
-          return new Response(`Error processing request: ${error.message}`, {
+          return new Response('Error processing request: ' + error.message, {
             status: 500,
             headers: { 'Content-Type': 'text/plain' }
           });
@@ -1013,7 +1013,7 @@ async function handleCreateUserMapping(request, env) {
     }
     
     // Create the mapping key in the format: user:{userId}:path:{customPath}
-    const mappingKey = \`user:\${userId}:path:\${customPath}\`;
+    const mappingKey = 'user:' + userId + ':path:' + customPath;
     
     // Check if this mapping already exists
     const existingMapping = await env.URL_MAPPER_KV.get(mappingKey);
@@ -1039,7 +1039,7 @@ async function handleCreateUserMapping(request, env) {
     
     // Add this mapping to the user's list of mappings
     // First get the current list of mappings for this user
-    const userMappingsListKey = \`user:\${userId}:mappings:list\`;
+    const userMappingsListKey = 'user:' + userId + ':mappings:list';
     let userMappingsList = [];
     const existingList = await env.URL_MAPPER_KV.get(userMappingsListKey);
     if (existingList) {
@@ -1059,10 +1059,10 @@ async function handleCreateUserMapping(request, env) {
     
     // Derive the base URL from the request
     const url = new URL(request.url);
-    const baseUrl = \`\${url.protocol}//\${url.host}\`;
+    const baseUrl = url.protocol + '//' + url.host;
     
     // Create the mapped URL
-    const mappedUrl = \`\${baseUrl}/m/\${userId}/\${customPath}\`;
+    const mappedUrl = baseUrl + '/m/' + userId + '/' + customPath;
     
     return new Response(JSON.stringify({
       success: true,
@@ -1149,7 +1149,7 @@ async function handleCreatePersistentText(request, env) {
     }
     
     // Create the mapping key in the format: user:{userId}:path:{customPath}
-    const mappingKey = \`user:\${userId}:path:\${customPath}\`;
+    const mappingKey = 'user:' + userId + ':path:' + customPath;
     
     // Check if this mapping already exists
     const existingMapping = await env.URL_MAPPER_KV.get(mappingKey);
@@ -1177,7 +1177,7 @@ async function handleCreatePersistentText(request, env) {
     
     // Add this mapping to the user's list of mappings
     // First get the current list of mappings for this user
-    const userMappingsListKey = \`user:\${userId}:mappings:list\`;
+    const userMappingsListKey = 'user:' + userId + ':mappings:list';
     let userMappingsList = [];
     const existingList = await env.URL_MAPPER_KV.get(userMappingsListKey);
     if (existingList) {
@@ -1197,10 +1197,10 @@ async function handleCreatePersistentText(request, env) {
     
     // Derive the base URL from the request
     const url = new URL(request.url);
-    const baseUrl = \`\${url.protocol}//\${url.host}\`;
+    const baseUrl = url.protocol + '//' + url.host;
     
     // Create the persistent URL
-    const persistentUrl = \`\${baseUrl}/m/\${userId}/\${customPath}\`;
+    const persistentUrl = baseUrl + '/m/' + userId + '/' + customPath;
     
     return new Response(JSON.stringify({
       success: true,
@@ -1251,7 +1251,7 @@ async function handleGetUserMappings(request, env, path) {
   
   try {
     // Get the user's list of mappings
-    const userMappingsListKey = \`user:\${userId}:mappings:list\`;
+    const userMappingsListKey = 'user:' + userId + ':mappings:list';
     const userMappingsListJson = await env.URL_MAPPER_KV.get(userMappingsListKey);
     
     if (!userMappingsListJson) {
@@ -1355,7 +1355,7 @@ async function performDelete(env, userId, customPath) {
   
   try {
     // Create the mapping key in the format: user:{userId}:path:{customPath}
-    const mappingKey = \`user:\${userId}:path:\${customPath}\`;
+    const mappingKey = 'user:' + userId + ':path:' + customPath;
     
     // Check if the mapping exists
     const existingMapping = await env.URL_MAPPER_KV.get(mappingKey);
@@ -1370,7 +1370,7 @@ async function performDelete(env, userId, customPath) {
     await env.URL_MAPPER_KV.delete(mappingKey);
     
     // Remove the mapping from the user's list
-    const userMappingsListKey = \`user:\${userId}:mappings:list\`;
+    const userMappingsListKey = 'user:' + userId + ':mappings:list';
     const userMappingsListJson = await env.URL_MAPPER_KV.get(userMappingsListKey);
     
     if (userMappingsListJson) {
@@ -1432,7 +1432,7 @@ async function handleRegister(request, env) {
     }
     
     // Check if user already exists
-    const userExists = await env.URL_MAPPER_KV.get(\`user:\${userId}:profile\`);
+    const userExists = await env.URL_MAPPER_KV.get('user:' + userId + ':profile');
     if (userExists) {
       return new Response(JSON.stringify({ error: 'User ID already exists' }), {
         status: 409,
@@ -1451,7 +1451,7 @@ async function handleRegister(request, env) {
       lastLoginAt: new Date().toISOString()
     };
     
-    await env.URL_MAPPER_KV.put(\`user:\${userId}:profile\`, JSON.stringify(userProfile));
+    await env.URL_MAPPER_KV.put('user:' + userId + ':profile', JSON.stringify(userProfile));
     
     // Store user credentials
     const userCredentials = {
@@ -1460,7 +1460,7 @@ async function handleRegister(request, env) {
       updatedAt: new Date().toISOString()
     };
     
-    await env.URL_MAPPER_KV.put(\`user:\${userId}:credentials\`, JSON.stringify(userCredentials));
+    await env.URL_MAPPER_KV.put('user:' + userId + ':credentials', JSON.stringify(userCredentials));
     
     return new Response(JSON.stringify({
       success: true,
@@ -1503,7 +1503,7 @@ async function handleLogin(request, env) {
     }
     
     // Get stored credentials
-    const storedCredentialsJson = await env.URL_MAPPER_KV.get(\`user:\${userId}:credentials\`);
+    const storedCredentialsJson = await env.URL_MAPPER_KV.get('user:' + userId + ':credentials');
     if (!storedCredentialsJson) {
       return new Response(JSON.stringify({ error: 'Invalid credentials' }), {
         status: 401,
@@ -1523,11 +1523,11 @@ async function handleLogin(request, env) {
     }
     
     // Update last login time
-    const userProfileJson = await env.URL_MAPPER_KV.get(\`user:\${userId}:profile\`);
+    const userProfileJson = await env.URL_MAPPER_KV.get('user:' + userId + ':profile');
     if (userProfileJson) {
       const userProfile = JSON.parse(userProfileJson);
       userProfile.lastLoginAt = new Date().toISOString();
-      await env.URL_MAPPER_KV.put(\`user:\${userId}:profile\`, JSON.stringify(userProfile));
+      await env.URL_MAPPER_KV.put('user:' + userId + ':profile', JSON.stringify(userProfile));
     }
     
     return new Response(JSON.stringify({
@@ -1576,7 +1576,7 @@ async function handleQrCodeGeneration(request) {
   try {
     // Generate a QR code URL using a public QR code API
     // Note: In a production environment, you might want to generate QR codes directly in the worker
-    const qrApiUrl = \`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=\${encodeURIComponent(targetUrl)}\`;
+    const qrApiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(targetUrl);
     const qrResponse = await fetch(qrApiUrl);
     
     if (!qrResponse.ok) {
