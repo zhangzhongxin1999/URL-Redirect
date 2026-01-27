@@ -11,6 +11,7 @@
 4. 创建用户自定义的URL映射
 5. 为生成的URL提供二维码
 6. 用户管理：查看和删除用户创建的映射
+7. 用户认证：注册和登录功能
 
 ## 功能特性
 
@@ -24,31 +25,56 @@
 - 文本内容存储和检索
 - 二维码生成功能
 - 用户管理：查看和删除用户创建的映射
+- 用户认证：注册和登录功能
 - **新增：** 安全访问控制
 
 ## 工作原理
 
-该服务提供四个主要功能：
+该服务提供五个主要功能：
 
-### 1. 统一用户映射系统
+### 1. 用户认证系统
+使用Cloudflare KV存储用户凭证：
+- 注册端点：`/auth/register` - 创建新用户账户
+- 登录端点：`/auth/login` - 验证用户凭证
+
+### 2. 统一用户映射系统
 使用Cloudflare KV存储维护用户定义的URL映射：
 - 端点：`/m/{userId}/{customPath}` - 从存储的原始URL或文本内容检索
 - API：`/api/create-user-mapping` - 创建新的用户URL映射
 - API：`/api/create-persistent-text` - 创建新的用户文本内容映射
 
-### 2. 用户管理
+### 3. 用户管理
 管理用户创建的映射：
 - API：`/api/user/{userId}/mappings` - 获取用户的所有映射
 - API：`/api/user/{userId}/mappings/{customPath}/delete` - 删除用户的特定映射
 
-### 3. 二维码生成器
+### 4. 二维码生成器
 为任意URL生成二维码图片：
 - 端点：`/qrcode/generate?url={target-url}` - 生成目标URL的二维码
 - 方便移动设备扫描访问
 
 ## 使用方法
 
-### 1. 创建用户URL映射
+### 1. 用户注册和登录
+
+#### 注册新用户
+```
+POST 请求到 /auth/register
+表单数据：
+- userId: 期望的用户ID（只能包含字母、数字、连字符和下划线）
+- email: 邮箱地址（可选）
+- password: 密码
+```
+
+#### 用户登录
+```
+POST 请求到 /auth/login
+表单数据：
+- userId: 用户ID
+- password: 密码
+```
+
+### 2. 创建用户URL映射
 
 #### 通过API创建映射
 ```
@@ -75,7 +101,7 @@ https://{your-site}.pages.dev/m/{userId}/{customPath}
 访问URL: https://your-site.pages.dev/m/myuser123/weather-data
 ```
 
-### 2. 创建用户文本内容映射
+### 3. 创建用户文本内容映射
 
 #### 通过API创建文本内容
 ```
@@ -93,7 +119,7 @@ POST 到 /api/create-persistent-text
 https://{your-site}.pages.dev/m/{userId}/{customPath}
 ```
 
-### 3. 用户管理
+### 4. 用户管理
 
 #### 查看用户的所有映射
 ```
@@ -105,7 +131,7 @@ GET 请求到 /api/user/{userId}/mappings
 DELETE 请求到 /api/user/{userId}/mappings/{customPath}/delete
 ```
 
-### 4. 二维码生成器
+### 5. 二维码生成器
 
 #### 生成二维码
 ```
