@@ -6,7 +6,4 @@ pages_build_output_dir = "."
 [[kv_namespaces]]
 binding = "URL_MAPPER_KV"
 id = "7cdf42435f374e909af15b3243dbbd92"
-preview_id = "your-preview-kv-namespace-id-here"
-
-[env.production]
-account_id = "your-account-id-here"
+preview_id = "7cdf42435f374e909af15b3243dbbd92"
