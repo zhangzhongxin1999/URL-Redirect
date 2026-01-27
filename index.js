@@ -548,6 +548,16 @@ function getHtmlPage() {
     // Authentication state
     let currentUser = null;
     
+    // Make functions globally available to HTML onclick attributes
+    window.registerUser = registerUser;
+    window.loginUser = loginUser;
+    window.logout = logout;
+    window.createUserMapping = createUserMapping;
+    window.createPersistentText = createPersistentText;
+    window.generateQRCode = generateQRCode;
+    window.viewUserMappings = viewUserMappings;
+    window.deleteMapping = deleteMapping;
+    
     // Initialize the page
     document.addEventListener('DOMContentLoaded', function() {
       // Check if user is logged in from localStorage
