@@ -1,5 +1,6 @@
 name = "url-redirect"
 compatibility_date = "2023-10-25"
+pages_build_output_dir = "."
 
 # Bind the KV namespace for user-defined mappings
 [[kv_namespaces]]
