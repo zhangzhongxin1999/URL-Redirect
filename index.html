@@ -216,12 +216,40 @@
         <input type="url" id="mappedSiteUrl" value="https://your-site.pages.dev" placeholder="e.g., https://your-site.pages.dev">
       </div>
       
-      <button onclick="generateMappedUrl()">Generate Mapped URL</button>
+      <button onclick="generateMappedUrl()">Generate Temporary Mapped URL</button>
       
       <div id="mappedResult" class="result">
-        <p><strong>Generated Mapped URLs:</strong></p>
+        <p><strong>Generated Temporary Mapped URLs:</strong></p>
         <p>Parameter-based: <a id="paramUrl" href="#" target="_blank"></a></p>
         <p>Encoded URL: <a id="encodedUrl" href="#" target="_blank"></a></p>
+      </div>
+    </div>
+    
+    <div class="persistent-mapper">
+      <h2>💾 Persistent URL Mapper</h2>
+      <p>Create persistent URL mappings that are stored and accessible via a unique ID:</p>
+      
+      <div class="form-group">
+        <label for="persistentOriginalUrl">Original URL to map:</label>
+        <input type="url" id="persistentOriginalUrl" placeholder="e.g., https://example.com/data.json">
+      </div>
+      
+      <div class="form-group">
+        <label for="customMapId">Custom Map ID (optional):</label>
+        <input type="text" id="customMapId" placeholder="Leave blank for auto-generated ID">
+      </div>
+      
+      <div class="form-group">
+        <label for="persistentSiteUrl">Your Site URL:</label>
+        <input type="url" id="persistentSiteUrl" value="https://your-site.pages.dev" placeholder="e.g., https://your-site.pages.dev">
+      </div>
+      
+      <button onclick="createPersistentMap()">Create Persistent Mapping</button>
+      
+      <div id="persistentResult" class="result">
+        <p><strong>Persistent Mapped URL:</strong></p>
+        <p><a id="persistentUrl" href="#" target="_blank"></a></p>
+        <p>Map ID: <span id="mapIdDisplay"></span></p>
       </div>
     </div>
     
@@ -336,6 +364,52 @@
         document.getElementById('mappedResult').classList.add('show');
       } catch (error) {
         alert('Error generating mapped URL: ' + error.message);
+      }
+    }
+    
+    async function createPersistentMap() {
+      const originalUrl = document.getElementById('persistentOriginalUrl').value;
+      const customMapId = document.getElementById('customMapId').value;
+      const siteUrl = document.getElementById('persistentSiteUrl').value;
+      
+      if (!originalUrl) {
+        alert('Please enter the original URL to map');
+        return;
+      }
+      
+      if (!siteUrl) {
+        alert('Please enter your site URL');
+        return;
+      }
+      
+      try {
+        // Use the API endpoint to create a persistent mapping
+        const formData = new FormData();
+        formData.append('originalUrl', originalUrl);
+        formData.append('baseUrl', siteUrl);
+        if (customMapId) {
+          formData.append('customId', customMapId);
+        }
+        
+        const response = await fetch('/api/create-persistent-map', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          // Update the result section
+          document.getElementById('persistentUrl').href = data.mappedUrl;
+          document.getElementById('persistentUrl').textContent = data.mappedUrl;
+          document.getElementById('mapIdDisplay').textContent = data.mapId;
+          
+          document.getElementById('persistentResult').classList.add('show');
+        } else {
+          alert('Error: ' + data.error);
+        }
+      } catch (error) {
+        alert('Error creating persistent mapping: ' + error.message);
       }
     }
   </script>

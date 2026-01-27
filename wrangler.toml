@@ -1,5 +1,11 @@
-name = "gist-proxy"
+name = "url-redirect"
 compatibility_date = "2023-10-25"
+
+# Bind the KV namespace for persistent URL mappings
+[[kv_namespaces]]
+binding = "URL_MAPPER_KV"
+id = "your-kv-namespace-id-here"
+preview_id = "your-preview-kv-namespace-id-here"
 
 [env.production]
 account_id = "your-account-id-here"
