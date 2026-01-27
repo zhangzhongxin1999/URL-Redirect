@@ -553,8 +553,16 @@ function getHtmlPage() {
       // Check if user is logged in from localStorage
       const savedUser = localStorage.getItem('currentUser');
       if (savedUser) {
-        currentUser = JSON.parse(savedUser);
-        updateAuthStatus(true);
+        try {
+          currentUser = JSON.parse(savedUser);
+          updateAuthStatus(true);
+        } catch(e) {
+          console.error('Error parsing saved user data:', e);
+          localStorage.removeItem('currentUser');
+          updateAuthStatus(false);
+        }
+      } else {
+        updateAuthStatus(false);
       }
     });
     
@@ -577,7 +585,7 @@ function getHtmlPage() {
         document.getElementById('textUserId').disabled = false;
         
         // Enable buttons
-        document.querySelectorAll('button:not(.auth-button):not(#logoutBtn)').forEach(btn => {
+        document.querySelectorAll('button:not(.auth-button):not(.logout-button)').forEach(btn => {
           btn.disabled = false;
         });
       } else {
@@ -594,7 +602,7 @@ function getHtmlPage() {
         document.getElementById('textUserId').disabled = true;
         
         // Disable buttons
-        document.querySelectorAll('button:not(.auth-button):not(#logoutBtn)').forEach(btn => {
+        document.querySelectorAll('button:not(.auth-button):not(.logout-button)').forEach(btn => {
           btn.disabled = true;
         });
       }
