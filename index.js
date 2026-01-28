@@ -309,7 +309,6 @@ function getHtmlPage() {
       <div id="mappingResult" class="result">
         <p><strong>已创建映射：</strong></p>
         <p><a id="mappingUrl" href="#" target="_blank"></a></p>
-        <p>映射密钥：<span id="mappingKeyDisplay"></span></p>
       </div>
     </div>
     
@@ -357,9 +356,6 @@ function getHtmlPage() {
       </ol>
     </div>
     
-    <div class="admin-link">
-      <p>管理员入口：<a href="/admin">管理所有映射</a></p>
-    </div>
   </div>
 
   <script>
@@ -383,7 +379,6 @@ function getHtmlPage() {
           const link = document.getElementById('mappingUrl');
           link.href = data.mappedUrl;
           link.textContent = data.mappedUrl;
-          document.getElementById('mappingKeyDisplay').textContent = data.mappingKey;
           resultDiv.classList.add('show');
           addQRCodeToElement('mappingUrl');
         } else {
@@ -515,8 +510,8 @@ async function handleCreateUrlMapping(request, env) {
       });
     }
     
-    // Generate a default user ID if not provided (using a random identifier)
-    const userId = 'admin_' + Date.now().toString(36);
+    // Generate a random user ID (using a random identifier)
+    const userId = Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
     
     // Validate the original URL
     try {
@@ -642,8 +637,8 @@ async function handleCreateTextMapping(request, env) {
       });
     }
     
-    // Generate a default user ID if not provided (using a random identifier)
-    const userId = 'admin_' + Date.now().toString(36);
+    // Generate a random user ID (using a random identifier)
+    const userId = Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
     
     // Determine content type based on file extension
     let contentType = 'text/plain';
