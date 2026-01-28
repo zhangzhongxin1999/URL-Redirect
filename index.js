@@ -189,11 +189,11 @@ function getHtmlPage() {
   // 注意：在 Worker 的字符串中，客户端 JS 的反引号 ` 和变量符号 $ 需要转义
   // 以防止后端 JS 尝试解析它们。
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Universal Content Proxy</title>
+  <title>通用内容代理</title>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -288,87 +288,87 @@ function getHtmlPage() {
 </head>
 <body>
   <div class="container">
-    <h1>🔄 Universal Content Proxy</h1>
+    <h1>🔄 通用内容代理</h1>
     
     <div class="warning">
-      <strong>🔒 Security Notice:</strong> All mappings are managed by administrator. For unauthorized access prevention.
+      <strong>🔒 安全提示：</strong>所有映射均由管理员统一管理，防止未授权访问。
     </div>
     
     <div class="service-section">
-      <h2>1. 📄 URL Mapping System</h2>
+      <h2>1. 📄 URL 映射系统</h2>
       <div class="form-group">
-        <label>Target URL to map:</label>
-        <input type="url" id="targetUrl" placeholder="e.g., https://example.com/data.json">
+        <label>目标 URL 地址：</label>
+        <input type="url" id="targetUrl" placeholder="例如：https://example.com/data.json">
       </div>
       <div class="form-group">
-        <label>Custom Path:</label>
-        <input type="text" id="customPath" placeholder="e.g., my-api-endpoint">
+        <label>自定义路径：</label>
+        <input type="text" id="customPath" placeholder="例如：my-api-endpoint">
       </div>
-      <button onclick="createUrlMapping()">Create URL Mapping</button>
+      <button onclick="createUrlMapping()">创建 URL 映射</button>
       
       <div id="mappingResult" class="result">
-        <p><strong>Created Mapping:</strong></p>
+        <p><strong>已创建映射：</strong></p>
         <p><a id="mappingUrl" href="#" target="_blank"></a></p>
-        <p>Mapping Key: <span id="mappingKeyDisplay"></span></p>
+        <p>映射密钥：<span id="mappingKeyDisplay"></span></p>
       </div>
     </div>
     
     <div class="service-section">
-      <h2>2. ✍️ Text Content Mapping</h2>
+      <h2>2. ✍️ 文本内容映射</h2>
       <div class="form-group">
-        <label>Content:</label>
-        <textarea id="persistentContent" placeholder="Enter text content here..."></textarea>
+        <label>内容：</label>
+        <textarea id="persistentContent" placeholder="在此输入文本内容..."></textarea>
       </div>
       <div class="form-group">
-        <label>File Name:</label>
-        <input type="text" id="persistentFilename" value="config.txt" placeholder="e.g., config.json, script.js">
+        <label>文件名称：</label>
+        <input type="text" id="persistentFilename" value="config.txt" placeholder="例如：config.json, script.js">
       </div>
       <div class="form-group">
-        <label>Custom Path:</label>
-        <input type="text" id="textCustomPath" placeholder="e.g., my-config, my-script">
+        <label>自定义路径：</label>
+        <input type="text" id="textCustomPath" placeholder="例如：my-config, my-script">
       </div>
-      <button onclick="createTextMapping()">Create Text Mapping</button>
+      <button onclick="createTextMapping()">创建文本映射</button>
       
       <div id="persistentTextResult" class="result">
-        <p><strong>Text Mapping URL:</strong></p>
+        <p><strong>文本映射地址：</strong></p>
         <p><a id="persistentTextUrl" href="#" target="_blank"></a></p>
       </div>
     </div>
     
     <div class="service-section">
-      <h2>3. 📱 QR Code Generator</h2>
+      <h2>3. 📱 二维码生成器</h2>
       <div class="form-group">
-        <label>URL:</label>
-        <input type="url" id="qrcodeUrl" placeholder="Enter URL">
+        <label>URL 地址：</label>
+        <input type="url" id="qrcodeUrl" placeholder="请输入 URL">
       </div>
-      <button onclick="generateQRCode()">Generate QR Code</button>
+      <button onclick="generateQRCode()">生成二维码</button>
       <div id="qrcodeResult" class="result">
         <div id="qrcodeContainer" style="display:flex; justify-content:center; margin:10px 0;"></div>
       </div>
     </div>
 
     <div class="instructions">
-      <h2>How to Use</h2>
+      <h2>使用方法</h2>
       <ol>
-        <li>Choose a service (URL Map or Text Content).</li>
-        <li>Fill in the required fields.</li>
-        <li>Click the Create button.</li>
-        <li>Use the generated link to access your content.</li>
+        <li>选择所需服务（URL 映射或文本内容）。</li>
+        <li>填写必要字段信息。</li>
+        <li>点击创建按钮。</li>
+        <li>使用生成的链接访问您的内容。</li>
       </ol>
     </div>
     
     <div class="admin-link">
-      <p>Administrator access: <a href="/admin">Manage all mappings</a></p>
+      <p>管理员入口：<a href="/admin">管理所有映射</a></p>
     </div>
   </div>
 
   <script>
-    // --- Core Features ---
+    // --- 核心功能 ---
     async function createUrlMapping() {
       const targetUrl = document.getElementById('targetUrl').value;
       const customPath = document.getElementById('customPath').value;
       
-      if (!targetUrl || !customPath) return alert('Please fill in all fields');
+      if (!targetUrl || !customPath) return alert('请填写所有字段');
       
       try {
         const formData = new FormData();
@@ -387,10 +387,10 @@ function getHtmlPage() {
           resultDiv.classList.add('show');
           addQRCodeToElement('mappingUrl');
         } else {
-          alert('Error: ' + data.error);
+          alert('错误：' + data.error);
         }
       } catch (e) {
-        alert('Error: ' + e.message);
+        alert('错误：' + e.message);
       }
     }
 
@@ -399,7 +399,7 @@ function getHtmlPage() {
       const filename = document.getElementById('persistentFilename').value;
       const customPath = document.getElementById('textCustomPath').value;
       
-      if (!content || !filename || !customPath) return alert('Please fill in all fields');
+      if (!content || !filename || !customPath) return alert('请填写所有字段');
       
       try {
         const formData = new FormData();
@@ -418,20 +418,20 @@ function getHtmlPage() {
           resultDiv.classList.add('show');
           addQRCodeToElement('persistentTextUrl');
         } else {
-          alert('Error: ' + data.error);
+          alert('错误：' + data.error);
         }
       } catch (e) {
-        alert('Error: ' + e.message);
+        alert('错误：' + e.message);
       }
     }
 
-    // --- QR Code ---
+    // --- 二维码 ---
     async function generateQRCode() {
       const url = document.getElementById('qrcodeUrl').value;
-      if (!url) return alert('Please enter a URL');
+      if (!url) return alert('请输入 URL');
       
       try {
-        new URL(url); // Validate
+        new URL(url); // 验证
         const img = document.createElement('img');
         img.src = '/qrcode/generate?url=' + encodeURIComponent(url);
         img.style.maxWidth = '300px';
@@ -441,20 +441,20 @@ function getHtmlPage() {
         container.appendChild(img);
         document.getElementById('qrcodeResult').classList.add('show');
       } catch (e) {
-        alert('Invalid URL');
+        alert('无效的 URL');
       }
     }
 
     function addQRCodeToElement(elementId) {
       const element = document.getElementById(elementId);
-      // Remove existing QR button if any to prevent duplicates
+      // 移除现有二维码按钮以避免重复
       if (element.nextSibling && element.nextSibling.tagName === 'BUTTON') {
         element.nextSibling.remove();
       }
       
       if (element && element.href) {
         const qrButton = document.createElement('button');
-        qrButton.textContent = 'QR';
+        qrButton.textContent = '二维码';
         qrButton.style.marginLeft = '10px';
         qrButton.style.padding = '2px 8px';
         qrButton.style.fontSize = '12px';
@@ -465,7 +465,7 @@ function getHtmlPage() {
       }
     }
 
-    // --- Expose functions to window for HTML onclick attributes ---
+    // --- 暴露函数供 HTML onclick 属性使用 ---
     window.createUrlMapping = createUrlMapping;
     window.createTextMapping = createTextMapping;
     window.generateQRCode = generateQRCode;
@@ -812,11 +812,11 @@ async function handleListAllMappings(request, env) {
 
 function handleAdminPage() {
   const adminPage = `<!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard - URL Redirect</title>
+  <title>管理员控制台 - URL 重定向</title>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -939,59 +939,59 @@ function handleAdminPage() {
 </head>
 <body>
   <div class="container">
-    <h1>🔐 Administrator Dashboard</h1>
-    <p>Welcome to the administrator dashboard. Here you can manage all mappings in the KV store.</p>
+    <h1>🔐 管理员控制台</h1>
+    <p>欢迎使用管理员控制台。您可以在此管理 KV 存储中的所有映射。</p>
     
     <div id="adminResult"></div>
     
-    <h2>Add New Mapping</h2>
+    <h2>添加新映射</h2>
     <div class="form-group">
-      <label>Mapping Type:</label>
+      <label>映射类型：</label>
       <select id="mappingType">
-        <option value="url_mapping">URL Mapping</option>
-        <option value="text_content">Text Content</option>
+        <option value="url_mapping">URL 映射</option>
+        <option value="text_content">文本内容</option>
       </select>
     </div>
     
     <div id="urlMappingFields">
       <div class="form-group">
-        <label>Target URL:</label>
+        <label>目标 URL：</label>
         <input type="url" id="targetUrl" placeholder="https://example.com/data.json">
       </div>
       <div class="form-group">
-        <label>Mapping Key (format: user:{userId}:path:{customPath}):</label>
+        <label>映射密钥（格式：user:{userId}:path:{customPath}）：</label>
         <input type="text" id="mappingKey" placeholder="user:myuser:path:myendpoint">
       </div>
     </div>
     
     <div id="textContentFields" style="display:none;">
       <div class="form-group">
-        <label>Content:</label>
-        <textarea id="textContent" placeholder="Enter text content here..."></textarea>
+        <label>内容：</label>
+        <textarea id="textContent" placeholder="在此输入文本内容..."></textarea>
       </div>
       <div class="form-group">
-        <label>Filename:</label>
-        <input type="text" id="textFilename" value="config.txt" placeholder="e.g., config.json, script.js">
+        <label>文件名：</label>
+        <input type="text" id="textFilename" value="config.txt" placeholder="例如：config.json, script.js">
       </div>
       <div class="form-group">
-        <label>Content Type:</label>
-        <input type="text" id="contentType" value="text/plain" placeholder="e.g., application/json, text/javascript">
+        <label>内容类型：</label>
+        <input type="text" id="contentType" value="text/plain" placeholder="例如：application/json, text/javascript">
       </div>
       <div class="form-group">
-        <label>Mapping Key (format: user:{userId}:path:{customPath}):</label>
+        <label>映射密钥（格式：user:{userId}:path:{customPath}）：</label>
         <input type="text" id="textMappingKey" placeholder="user:myuser:path:myendpoint">
       </div>
     </div>
     
-    <button onclick="switchMappingType()">Switch Type</button>
-    <button onclick="createMapping()">Create Mapping</button>
+    <button onclick="switchMappingType()">切换类型</button>
+    <button onclick="createMapping()">创建映射</button>
     
-    <h2>Manage Existing Mappings</h2>
-    <button class="refresh-btn" onclick="loadMappings()">Refresh Mappings List</button>
-    <button class="secondary-btn" onclick="deleteAllMappings()">Delete All Mappings</button>
+    <h2>管理现有映射</h2>
+    <button class="refresh-btn" onclick="loadMappings()">刷新映射列表</button>
+    <button class="secondary-btn" onclick="deleteAllMappings()">删除所有映射</button>
     
     <div id="mappingsList" class="mapping-list">
-      <p>Loading mappings...</p>
+      <p>正在加载映射...</p>
     </div>
   </div>
   
@@ -1017,16 +1017,16 @@ function handleAdminPage() {
           const mappingKey = document.getElementById('mappingKey').value;
           
           if (!targetUrl || !mappingKey) {
-            showMessage('Please fill in all fields', 'error');
+            showMessage('请填写所有字段', 'error');
             return;
           }
           
-          // Validate URL
+          // 验证 URL
           new URL(targetUrl);
           
-          // Validate mapping key format
+          // 验证映射密钥格式
           if (!isValidMappingKey(mappingKey)) {
-            showMessage('Invalid mapping key format. Use format: user:{userId}:path:{customPath}', 'error');
+            showMessage('无效的映射密钥格式。请使用格式：user:{userId}:path:{customPath}', 'error');
             return;
           }
           
@@ -1053,12 +1053,12 @@ function handleAdminPage() {
           
           const result = await response.json();
           if (result.success) {
-            showMessage('Mapping created successfully!', 'success');
+            showMessage('映射创建成功！', 'success');
             document.getElementById('targetUrl').value = '';
             document.getElementById('mappingKey').value = '';
-            loadMappings(); // Refresh the list
+            loadMappings(); // 刷新列表
           } else {
-            showMessage('Error: ' + result.error, 'error');
+            showMessage('错误：' + result.error, 'error');
           }
         } else { // text_content
           const content = document.getElementById('textContent').value;
@@ -1067,13 +1067,13 @@ function handleAdminPage() {
           const mappingKey = document.getElementById('textMappingKey').value;
           
           if (!content || !filename || !contentType || !mappingKey) {
-            showMessage('Please fill in all fields', 'error');
+            showMessage('请填写所有字段', 'error');
             return;
           }
           
-          // Validate mapping key format
+          // 验证映射密钥格式
           if (!isValidMappingKey(mappingKey)) {
-            showMessage('Invalid mapping key format. Use format: user:{userId}:path:{customPath}', 'error');
+            showMessage('无效的映射密钥格式。请使用格式：user:{userId}:path:{customPath}', 'error');
             return;
           }
           
@@ -1102,18 +1102,18 @@ function handleAdminPage() {
           
           const result = await response.json();
           if (result.success) {
-            showMessage('Text mapping created successfully!', 'success');
+            showMessage('文本映射创建成功！', 'success');
             document.getElementById('textContent').value = '';
             document.getElementById('textFilename').value = 'config.txt';
             document.getElementById('contentType').value = 'text/plain';
             document.getElementById('textMappingKey').value = '';
-            loadMappings(); // Refresh the list
+            loadMappings(); // 刷新列表
           } else {
-            showMessage('Error: ' + result.error, 'error');
+            showMessage('错误：' + result.error, 'error');
           }
         }
       } catch (error) {
-        showMessage('Error: ' + error.message, 'error');
+        showMessage('错误：' + error.message, 'error');
       }
     }
     
@@ -1133,10 +1133,10 @@ function handleAdminPage() {
         if (result.success) {
           displayMappings(result.mappings);
         } else {
-          showMessage('Error loading mappings: ' + result.error, 'error');
+          showMessage('加载映射时出错：' + result.error, 'error');
         }
       } catch (error) {
-        showMessage('Error: ' + error.message, 'error');
+        showMessage('错误：' + error.message, 'error');
       }
     }
     
@@ -1144,24 +1144,24 @@ function handleAdminPage() {
       const container = document.getElementById('mappingsList');
       
       if (mappings.length === 0) {
-        container.innerHTML = '<p>No mappings found.</p>';
+        container.innerHTML = '<p>未找到映射。</p>';
         return;
       }
       
-      // Create a table to display mappings
-      let tableHTML = '<table><thead><tr><th>Key</th><th>Type</th><th>Details</th><th>Actions</th></tr></thead><tbody>';
+      // 创建表格显示映射
+      let tableHTML = '<table><thead><tr><th>密钥</th><th>类型</th><th>详情</th><th>操作</th></tr></thead><tbody>';
       
       mappings.forEach(mapping => {
         let details = '';
         if (mapping.type === 'url_mapping') {
-          details = \`<strong>URL:</strong> \${mapping.originalUrl}<br><strong>User:</strong> \${mapping.userId}<br><strong>Path:</strong> \${mapping.customPath}\`;
+          details = \`<strong>URL：</strong> \${mapping.originalUrl}<br><strong>用户：</strong> \${mapping.userId}<br><strong>路径：</strong> \${mapping.customPath}\`;
         } else if (mapping.type === 'text_content') {
           const contentPreview = mapping.content.length > 100 ? 
             mapping.content.substring(0, 100) + '...' : 
             mapping.content;
-          details = \`<strong>Content:</strong> \${contentPreview}<br><strong>Filename:</strong> \${mapping.filename}<br><strong>Content-Type:</strong> \${mapping.contentType}\`;
+          details = \`<strong>内容：</strong> \${contentPreview}<br><strong>文件名：</strong> \${mapping.filename}<br><strong>内容类型：</strong> \${mapping.contentType}\`;
         } else {
-          details = \`<em>Unknown type: \${mapping.type}</em>\`;
+          details = \`<em>未知类型：\${mapping.type}</em>\`;
         }
         
         tableHTML += \`
@@ -1169,7 +1169,7 @@ function handleAdminPage() {
             <td>\${mapping.key}</td>
             <td>\${mapping.type}</td>
             <td>\${details}</td>
-            <td><button class="delete-btn" onclick="deleteMapping('\${mapping.key}')">Delete</button></td>
+            <td><button class="delete-btn" onclick="deleteMapping('\${mapping.key}')">删除</button></td>
           </tr>
         \`;
       });
@@ -1179,7 +1179,7 @@ function handleAdminPage() {
     }
     
     async function deleteMapping(key) {
-      if (!confirm('Are you sure you want to delete mapping: ' + key + '?')) {
+      if (!confirm('您确定要删除映射：' + key + ' 吗？')) {
         return;
       }
       
@@ -1197,18 +1197,18 @@ function handleAdminPage() {
         
         const result = await response.json();
         if (result.success) {
-          showMessage('Mapping deleted successfully!', 'success');
-          loadMappings(); // Refresh the list
+          showMessage('映射删除成功！', 'success');
+          loadMappings(); // 刷新列表
         } else {
-          showMessage('Error: ' + result.error, 'error');
+          showMessage('错误：' + result.error, 'error');
         }
       } catch (error) {
-        showMessage('Error: ' + error.message, 'error');
+        showMessage('错误：' + error.message, 'error');
       }
     }
     
     async function deleteAllMappings() {
-      if (!confirm('Are you absolutely sure you want to delete ALL mappings? This cannot be undone!')) {
+      if (!confirm('您确定要删除所有映射吗？此操作不可撤销！')) {
         return;
       }
       
@@ -1225,13 +1225,13 @@ function handleAdminPage() {
         
         const result = await response.json();
         if (result.success) {
-          showMessage('All mappings deleted successfully!', 'success');
-          loadMappings(); // Refresh the list
+          showMessage('所有映射删除成功！', 'success');
+          loadMappings(); // 刷新列表
         } else {
-          showMessage('Error: ' + result.error, 'error');
+          showMessage('错误：' + result.error, 'error');
         }
       } catch (error) {
-        showMessage('Error: ' + error.message, 'error');
+        showMessage('错误：' + error.message, 'error');
       }
     }
     
@@ -1239,7 +1239,7 @@ function handleAdminPage() {
       const resultDiv = document.getElementById('adminResult');
       resultDiv.innerHTML = '<div class="' + type + '">' + text + '</div>';
       
-      // Auto-hide success messages after 5 seconds
+      // 5秒后自动隐藏成功消息
       if (type === 'success') {
         setTimeout(() => {
           resultDiv.innerHTML = '';
@@ -1248,7 +1248,7 @@ function handleAdminPage() {
     }
     
     function isValidMappingKey(key) {
-      // Check if key matches pattern: user:{userId}:path:{customPath}
+      // 检查密钥是否符合模式：user:{userId}:path:{customPath}
       const regex = /^user:[a-zA-Z0-9_-]+:path:.+\$/;
       return regex.test(key);
     }
@@ -1269,7 +1269,7 @@ function handleAdminPage() {
       return 'unknown';
     }
     
-    // Load mappings when page loads
+    // 页面加载时获取映射
     window.onload = function() {
       loadMappings();
     };
