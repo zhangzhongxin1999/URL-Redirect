@@ -288,11 +288,7 @@ function getHtmlPage() {
 </head>
 <body>
   <div class="container">
-    <h1>🔄 通用内容代理</h1>
-    
-    <div class="warning">
-      <strong>🔒 安全提示：</strong>所有映射均由管理员统一管理，防止未授权访问。
-    </div>
+    <h1>🔄 URL工具</h1>
     
     <div class="service-section">
       <h2>1. 📄 URL 映射</h2>
