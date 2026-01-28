@@ -954,8 +954,8 @@ function handleAdminPage() {
         <input type="url" id="targetUrl" placeholder="https://example.com/data.json">
       </div>
       <div class="form-group">
-        <label>映射密钥（格式：user:{userId}:path:{customPath}）：</label>
-        <input type="text" id="mappingKey" placeholder="user:myuser:path:myendpoint">
+        <label>自定义路径：</label>
+        <input type="text" id="customPath" placeholder="myendpoint">
       </div>
     </div>
     
@@ -973,8 +973,8 @@ function handleAdminPage() {
         <input type="text" id="contentType" value="text/plain" placeholder="例如：application/json, text/javascript">
       </div>
       <div class="form-group">
-        <label>映射密钥（格式：user:{userId}:path:{customPath}）：</label>
-        <input type="text" id="textMappingKey" placeholder="user:myuser:path:myendpoint">
+        <label>自定义路径：</label>
+        <input type="text" id="textCustomPath" placeholder="myendpoint">
       </div>
     </div>
     
@@ -1009,9 +1009,9 @@ function handleAdminPage() {
       try {
         if (currentMappingType === 'url_mapping') {
           const targetUrl = document.getElementById('targetUrl').value;
-          const mappingKey = document.getElementById('mappingKey').value;
+          const customPath = document.getElementById('customPath').value;
           
-          if (!targetUrl || !mappingKey) {
+          if (!targetUrl || !customPath) {
             showMessage('请填写所有字段', 'error');
             return;
           }
@@ -1019,16 +1019,14 @@ function handleAdminPage() {
           // 验证 URL
           new URL(targetUrl);
           
-          // 验证映射密钥格式
-          if (!isValidMappingKey(mappingKey)) {
-            showMessage('无效的映射密钥格式。请使用格式：user:{userId}:path:{customPath}', 'error');
-            return;
-          }
+          // Generate a random user ID for the mapping
+          const userId = Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+          const mappingKey = 'user:' + userId + ':path:' + customPath;
           
           const mappingData = {
             originalUrl: targetUrl,
-            userId: extractUserIdFromKey(mappingKey),
-            customPath: extractCustomPathFromKey(mappingKey),
+            userId: userId,
+            customPath: customPath,
             createdAt: new Date().toISOString(),
             type: 'url_mapping'
           };
@@ -1050,7 +1048,7 @@ function handleAdminPage() {
           if (result.success) {
             showMessage('映射创建成功！', 'success');
             document.getElementById('targetUrl').value = '';
-            document.getElementById('mappingKey').value = '';
+            document.getElementById('customPath').value = '';
             loadMappings(); // 刷新列表
           } else {
             showMessage('错误：' + result.error, 'error');
@@ -1059,25 +1057,23 @@ function handleAdminPage() {
           const content = document.getElementById('textContent').value;
           const filename = document.getElementById('textFilename').value;
           const contentType = document.getElementById('contentType').value;
-          const mappingKey = document.getElementById('textMappingKey').value;
+          const customPath = document.getElementById('textCustomPath').value;
           
-          if (!content || !filename || !contentType || !mappingKey) {
+          if (!content || !filename || !contentType || !customPath) {
             showMessage('请填写所有字段', 'error');
             return;
           }
           
-          // 验证映射密钥格式
-          if (!isValidMappingKey(mappingKey)) {
-            showMessage('无效的映射密钥格式。请使用格式：user:{userId}:path:{customPath}', 'error');
-            return;
-          }
+          // Generate a random user ID for the mapping
+          const userId = Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+          const mappingKey = 'user:' + userId + ':path:' + customPath;
           
           const mappingData = {
             content: content,
             filename: filename,
             contentType: contentType,
-            userId: extractUserIdFromKey(mappingKey),
-            customPath: extractCustomPathFromKey(mappingKey),
+            userId: userId,
+            customPath: customPath,
             createdAt: new Date().toISOString(),
             type: 'text_content'
           };
@@ -1101,7 +1097,7 @@ function handleAdminPage() {
             document.getElementById('textContent').value = '';
             document.getElementById('textFilename').value = 'config.txt';
             document.getElementById('contentType').value = 'text/plain';
-            document.getElementById('textMappingKey').value = '';
+            document.getElementById('textCustomPath').value = '';
             loadMappings(); // 刷新列表
           } else {
             showMessage('错误：' + result.error, 'error');
