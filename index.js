@@ -164,6 +164,69 @@ export default {
     // Handle admin routes
     else if (path.startsWith('/admin')) {
       if (path === '/admin' || path === '/admin/') {
+        // Check for admin password if configured
+        const adminPassword = env.ADMIN_PASSWORD;
+        if (adminPassword) {
+          // For POST requests, check authorization header
+          if (request.method === 'POST') {
+            const authHeader = request.headers.get('Authorization');
+            if (!authHeader || !authHeader.startsWith('Bearer ')) {
+              return new Response(JSON.stringify({ error: 'Authorization header required' }), {
+                status: 401,
+                headers: { 'Content-Type': 'application/json' }
+              });
+            }
+            
+            const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+            if (token !== adminPassword) {
+              return new Response(JSON.stringify({ error: 'Invalid admin password' }), {
+                status: 401,
+                headers: { 'Content-Type': 'application/json' }
+              });
+            }
+          }
+          // For GET requests, check query parameter or cookie (but we'll use query for simplicity)
+          else if (request.method === 'GET') {
+            const url = new URL(request.url);
+            const token = url.searchParams.get('token');
+            if (token && token !== adminPassword) {
+              return new Response('Invalid admin password', { status: 401 });
+            } else if (!token && env.NODE_ENV !== 'development') { // Allow access without token in development
+              // Return a simple page that prompts for password and redirects
+              return new Response(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <title>管理员登录</title>
+                  <style>
+                    body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f5f5f5; }
+                    .login-form { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 300px; }
+                    input { width: 100%; padding: 10px; margin-bottom: 10px; box-sizing: border-box; }
+                    button { width: 100%; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+                    button:hover { background-color: #0069d9; }
+                  </style>
+                </head>
+                <body>
+                  <div class="login-form">
+                    <h2>管理员登录</h2>
+                    <input type="password" id="password" placeholder="输入管理员密码">
+                    <button onclick="login()">登录</button>
+                  </div>
+                  <script>
+                    function login() {
+                      const password = document.getElementById('password').value;
+                      window.location.href = '?token=' + encodeURIComponent(password);
+                    }
+                  </script>
+                </body>
+                </html>
+              `, {
+                headers: { 'Content-Type': 'text/html' }
+              });
+            }
+          }
+        }
+        
         if (request.method === 'GET') {
           return handleAdminPage();
         } else if (request.method === 'POST') {
@@ -1027,10 +1090,14 @@ function handleAdminPage() {
             type: 'url_mapping'
           };
           
+          // Get admin password from a secure storage or input field
+          const adminPassword = sessionStorage.getItem('adminPassword') || localStorage.getItem('adminPassword');
+          
           const response = await fetch('/admin', {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + adminPassword
             },
             body: JSON.stringify({
               action: 'create',
@@ -1074,10 +1141,14 @@ function handleAdminPage() {
             type: 'text_content'
           };
           
+          // Get admin password from a secure storage or input field
+          const adminPassword = sessionStorage.getItem('adminPassword') || localStorage.getItem('adminPassword');
+          
           const response = await fetch('/admin', {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + adminPassword
             },
             body: JSON.stringify({
               action: 'create',
@@ -1106,10 +1177,14 @@ function handleAdminPage() {
     
     async function loadMappings() {
       try {
+        // Get admin password from a secure storage or input field
+        const adminPassword = sessionStorage.getItem('adminPassword') || localStorage.getItem('adminPassword');
+        
         const response = await fetch('/admin', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + adminPassword
           },
           body: JSON.stringify({
             action: 'list'
@@ -1171,10 +1246,14 @@ function handleAdminPage() {
       }
       
       try {
+        // Get admin password from a secure storage or input field
+        const adminPassword = sessionStorage.getItem('adminPassword') || localStorage.getItem('adminPassword');
+        
         const response = await fetch('/admin', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + adminPassword
           },
           body: JSON.stringify({
             action: 'delete',
@@ -1200,10 +1279,14 @@ function handleAdminPage() {
       }
       
       try {
+        // Get admin password from a secure storage or input field
+        const adminPassword = sessionStorage.getItem('adminPassword') || localStorage.getItem('adminPassword');
+        
         const response = await fetch('/admin', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + adminPassword
           },
           body: JSON.stringify({
             action: 'delete_all'
@@ -1256,8 +1339,23 @@ function handleAdminPage() {
       return 'unknown';
     }
     
-    // 页面加载时获取映射
-    window.onload = function() {
+    // 页面加载时检查认证并获取映射
+    window.onload = async function() {
+      // Check if admin password is stored in session
+      let adminPassword = sessionStorage.getItem('adminPassword');
+      
+      if (!adminPassword) {
+        // Prompt for password
+        adminPassword = prompt('请输入管理员密码：');
+        if (!adminPassword) {
+          alert('需要管理员密码才能访问此页面');
+          return;
+        }
+        // Store password in session for this browser session
+        sessionStorage.setItem('adminPassword', adminPassword);
+      }
+      
+      // Now load mappings
       loadMappings();
     };
   </script>
