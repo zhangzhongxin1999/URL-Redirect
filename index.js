@@ -162,8 +162,8 @@ export default {
       }
     }
     // Handle admin routes
-    else if (path.startsWith('/admin/')) {
-      if (path === '/admin') {
+    else if (path.startsWith('/admin')) {
+      if (path === '/admin' || path === '/admin/') {
         if (request.method === 'GET') {
           return handleAdminPage();
         } else if (request.method === 'POST') {
