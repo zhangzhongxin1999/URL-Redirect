@@ -132,30 +132,24 @@ export default {
         });
       }
     }
-    // Handle API routes
+    // Updated API endpoints to remove user-specific restrictions
     else if (path.startsWith('/api/')) {
       // Import and handle API routes dynamically
-      if (path === '/api/create-user-mapping') {
+      if (path === '/api/create-url-mapping') {
         if (request.method === 'POST') {
-          return handleCreateUserMapping(request, env);
+          return handleCreateUrlMapping(request, env);
         } else if (request.method === 'OPTIONS') {
           return handleCorsPreflight();
         }
-      } else if (path === '/api/create-persistent-text') {
+      } else if (path === '/api/create-text-mapping') {
         if (request.method === 'POST') {
-          return handleCreatePersistentText(request, env);
+          return handleCreateTextMapping(request, env);
         } else if (request.method === 'OPTIONS') {
           return handleCorsPreflight();
         }
-      } else if (path.startsWith('/api/user/') && path.endsWith('/mappings')) {
+      } else if (path === '/api/list-mappings') {
         if (request.method === 'GET') {
-          return handleGetUserMappings(request, env, path);
-        } else if (request.method === 'OPTIONS') {
-          return handleCorsPreflight();
-        }
-      } else if (path.startsWith('/api/user/') && path.includes('/mappings/') && path.endsWith('/delete')) {
-        if (request.method === 'DELETE') {
-          return handleDeleteUserMapping(request, env, path);
+          return handleListAllMappings(request, env);
         } else if (request.method === 'OPTIONS') {
           return handleCorsPreflight();
         }
