@@ -5,4 +5,6 @@ compatibility_date = "2023-10-25"
 # Bind the KV namespace for user-defined mappings
 [[kv_namespaces]]
 binding = "URL_MAPPER_KV"
-id = "7cdf42435f374e909af15b3243dbbd92"
+# Note: You need to create a KV namespace in your Cloudflare dashboard
+# and add the ID here, or use wrangler commands to create one
+# id = "YOUR_NAMESPACE_ID_HERE"
