@@ -1494,19 +1494,6 @@ async function handleAdminAction(request, env) {
   }
 }
 
-function isValidMappingKey(key) {
-  // Check if key matches pattern: user:{userId}:path:{customPath}
-  const regex = /^user:[a-zA-Z0-9_-]+:path:.+$/;
-  return regex.test(key);
-}
-
-function extractCustomPathFromKey(key) {
-  const parts = key.split(':path:');
-  if (parts.length >= 2) {
-    return parts[1]; // ...:path:{customPath}
-  }
-  return 'unknown';
-}
 
 async function handleQrCodeGeneration(request) {
   // Parse the URL parameters
