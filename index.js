@@ -161,32 +161,22 @@ export default {
         }
       }
     }
-    // Handle auth routes
-    else if (path.startsWith('/auth/')) {
-      if (path === '/auth/register') {
-        if (request.method === 'POST') {
-          return handleRegister(request, env);
-        } else if (request.method === 'OPTIONS') {
-          return handleCorsPreflight();
-        }
-      } else if (path === '/auth/login') {
-        if (request.method === 'POST') {
-          return handleLogin(request, env);
-        } else if (request.method === 'OPTIONS') {
-          return handleCorsPreflight();
-        }
-      }
-    }
     // Handle QR code generation
     else if (path.startsWith('/qrcode/generate')) {
       if (request.method === 'GET') {
         return handleQrCodeGeneration(request);
       }
     }
-    // Handle admin access control
+    // Handle admin routes
     else if (path.startsWith('/admin/')) {
-      if (path === '/admin/access-control') {
-        return handleAccessControlPage();
+      if (path === '/admin') {
+        if (request.method === 'GET') {
+          return handleAdminPage();
+        } else if (request.method === 'POST') {
+          return handleAdminAction(request, env);
+        } else if (request.method === 'OPTIONS') {
+          return handleCorsPreflight();
+        }
       }
     }
     // Serve the main page
@@ -200,7 +190,7 @@ export default {
   }
 };
 
-// --- HTML Content Generation (Updated with Fixes) ---
+// --- HTML Content Generation (Simplified version without auth) ---
 function getHtmlPage() {
   // 注意：在 Worker 的字符串中，客户端 JS 的反引号 ` 和变量符号 $ 需要转义
   // 以防止后端 JS 尝试解析它们。
@@ -209,7 +199,7 @@ function getHtmlPage() {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Universal Content Proxy with User-defined Mapping</title>
+  <title>Universal Content Proxy</title>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -237,7 +227,7 @@ function getHtmlPage() {
       margin-bottom: 5px;
       font-weight: bold;
     }
-    input[type="text"], input[type="url"], input[type="email"], input[type="password"], textarea {
+    input[type="text"], input[type="url"], textarea {
       width: 100%;
       padding: 8px;
       border: 1px solid #ccc;
@@ -260,24 +250,6 @@ function getHtmlPage() {
     button:hover {
       background-color: #45a049;
     }
-    button:disabled {
-      background-color: #cccccc;
-      cursor: not-allowed;
-    }
-    .auth-button {
-      background-color: #2196F3;
-    }
-    .auth-button:hover {
-      background-color: #0b7dda;
-    }
-    .logout-button {
-      background-color: #f44336;
-      float: right; 
-      display: none;
-    }
-    .logout-button:hover {
-      background-color: #da190b;
-    }
     .result {
       margin-top: 15px;
       padding: 10px;
@@ -287,40 +259,6 @@ function getHtmlPage() {
     }
     .result.show {
       display: block;
-    }
-    .mapping-item {
-      border: 1px solid #ddd;
-      padding: 10px;
-      margin: 10px 0;
-      border-radius: 5px;
-      background-color: #f9f9f9;
-    }
-    .delete-btn {
-      background-color: #f44336;
-      color: white;
-      border: none;
-      padding: 5px 10px;
-      border-radius: 3px;
-      cursor: pointer;
-      float: right;
-    }
-    .delete-btn:hover {
-      background-color: #da190b;
-    }
-    .auth-status {
-      margin: 10px 0;
-      padding: 10px;
-      background-color: #e8f5e8;
-      border-radius: 4px;
-      display: none;
-    }
-    .auth-status.authenticated {
-      background-color: #e8f5e8;
-      border: 1px solid #4CAF50;
-    }
-    .auth-status.unauthenticated {
-      background-color: #ffeaea;
-      border: 1px solid #f44336;
     }
     .warning {
       background: #fff3cd;
@@ -336,8 +274,21 @@ function getHtmlPage() {
       padding: 15px;
       margin: 15px 0;
     }
-    .instructions, .features {
+    .instructions {
       margin-top: 20px;
+    }
+    .admin-link {
+      text-align: center;
+      margin-top: 20px;
+      padding: 10px;
+      font-size: 14px;
+    }
+    .admin-link a {
+      color: #2c6bed;
+      text-decoration: none;
+    }
+    .admin-link a:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
@@ -346,78 +297,23 @@ function getHtmlPage() {
     <h1>🔄 Universal Content Proxy</h1>
     
     <div class="warning">
-      <strong>🔒 Security Notice:</strong> For enhanced security, ensure your backend validates all requests.
-    </div>
-    
-    <div class="auth-section">
-      <h2>🔐 Account</h2>
-      <p>Register or login to manage your mappings</p>
-      
-      <div id="authStatus" class="auth-status">
-        <span id="authStatusText"></span>
-        <button class="logout-button" id="logoutBtn" onclick="logout()">Logout</button>
-      </div>
-      
-      <div class="form-group">
-        <label>Desired User ID:</label>
-        <input type="text" id="registerUserId" placeholder="e.g., myuser123">
-      </div>
-      <div class="form-group">
-        <label>Email (optional):</label>
-        <input type="email" id="registerEmail" placeholder="e.g., user@example.com">
-      </div>
-      <div class="form-group">
-        <label>Password:</label>
-        <input type="password" id="registerPassword" placeholder="Enter password">
-      </div>
-      <button class="auth-button" onclick="registerUser()">Register</button>
-      
-      <div class="form-group" style="margin-top: 20px;">
-        <label>User ID:</label>
-        <input type="text" id="loginUserId" placeholder="e.g., myuser123">
-      </div>
-      <div class="form-group">
-        <label>Password:</label>
-        <input type="password" id="loginPassword" placeholder="Enter password">
-      </div>
-      <button class="auth-button" onclick="loginUser()">Login</button>
-    </div>
-    
-    <div class="user-management service-section">
-      <h2>👤 User Management</h2>
-      <p>View and manage your mappings</p>
-      
-      <div class="form-group">
-        <label>Your User ID:</label>
-        <input type="text" id="manageUserId" disabled>
-      </div>
-      
-      <button onclick="viewUserMappings()" disabled>View My Mappings</button>
-      
-      <div id="userMappingsResult" class="result">
-        <p><strong>Your Mappings:</strong></p>
-        <div id="mappingsList"></div>
-      </div>
+      <strong>🔒 Security Notice:</strong> All mappings are managed by administrator. For unauthorized access prevention.
     </div>
     
     <div class="service-section">
-      <h2>1. 📄 Unified URL Mapping System</h2>
+      <h2>1. 📄 URL Mapping System</h2>
       <div class="form-group">
         <label>Target URL to map:</label>
-        <input type="url" id="targetUrl" placeholder="e.g., https://example.com/data.json" disabled>
-      </div>
-      <div class="form-group">
-        <label>Your User ID:</label>
-        <input type="text" id="userId" disabled>
+        <input type="url" id="targetUrl" placeholder="e.g., https://example.com/data.json">
       </div>
       <div class="form-group">
         <label>Custom Path:</label>
-        <input type="text" id="customPath" placeholder="e.g., my-api-endpoint" disabled>
+        <input type="text" id="customPath" placeholder="e.g., my-api-endpoint">
       </div>
-      <button onclick="createUserMapping()" disabled>Create Custom Mapping</button>
+      <button onclick="createUrlMapping()">Create URL Mapping</button>
       
       <div id="mappingResult" class="result">
-        <p><strong>Your Custom Mapping:</strong></p>
+        <p><strong>Created Mapping:</strong></p>
         <p><a id="mappingUrl" href="#" target="_blank"></a></p>
         <p>Mapping Key: <span id="mappingKeyDisplay"></span></p>
       </div>
@@ -427,21 +323,17 @@ function getHtmlPage() {
       <h2>2. ✍️ Text Content Mapping</h2>
       <div class="form-group">
         <label>Content:</label>
-        <textarea id="persistentContent" placeholder="Enter text content here..." disabled></textarea>
+        <textarea id="persistentContent" placeholder="Enter text content here..."></textarea>
       </div>
       <div class="form-group">
         <label>File Name:</label>
-        <input type="text" id="persistentFilename" value="config.txt" disabled>
-      </div>
-      <div class="form-group">
-        <label>Your User ID:</label>
-        <input type="text" id="textUserId" disabled>
+        <input type="text" id="persistentFilename" value="config.txt" placeholder="e.g., config.json, script.js">
       </div>
       <div class="form-group">
         <label>Custom Path:</label>
-        <input type="text" id="textCustomPath" disabled>
+        <input type="text" id="textCustomPath" placeholder="e.g., my-config, my-script">
       </div>
-      <button onclick="createPersistentText()" disabled>Create Text Mapping</button>
+      <button onclick="createTextMapping()">Create Text Mapping</button>
       
       <div id="persistentTextResult" class="result">
         <p><strong>Text Mapping URL:</strong></p>
@@ -453,9 +345,9 @@ function getHtmlPage() {
       <h2>3. 📱 QR Code Generator</h2>
       <div class="form-group">
         <label>URL:</label>
-        <input type="url" id="qrcodeUrl" placeholder="Enter URL" disabled>
+        <input type="url" id="qrcodeUrl" placeholder="Enter URL">
       </div>
-      <button onclick="generateQRCode()" disabled>Generate QR Code</button>
+      <button onclick="generateQRCode()">Generate QR Code</button>
       <div id="qrcodeResult" class="result">
         <div id="qrcodeContainer" style="display:flex; justify-content:center; margin:10px 0;"></div>
       </div>
@@ -464,174 +356,32 @@ function getHtmlPage() {
     <div class="instructions">
       <h2>How to Use</h2>
       <ol>
-        <li>Register or Login first.</li>
         <li>Choose a service (URL Map or Text Content).</li>
-        <li>Fill in the fields and click Create.</li>
-        <li>Manage your links in the User Management section.</li>
+        <li>Fill in the required fields.</li>
+        <li>Click the Create button.</li>
+        <li>Use the generated link to access your content.</li>
       </ol>
+    </div>
+    
+    <div class="admin-link">
+      <p>Administrator access: <a href="/admin">Manage all mappings</a></p>
     </div>
   </div>
 
   <script>
-    // --- Global State ---
-    let currentUser = null;
-
-    // --- Initialization ---
-    document.addEventListener('DOMContentLoaded', function() {
-      const savedUser = localStorage.getItem('currentUser');
-      if (savedUser) {
-        try {
-          currentUser = JSON.parse(savedUser);
-          updateAuthStatus(true);
-        } catch(e) {
-          console.error('Auth Error', e);
-          localStorage.removeItem('currentUser');
-          updateAuthStatus(false);
-        }
-      } else {
-        updateAuthStatus(false);
-      }
-    });
-
-    // --- UI Helpers ---
-    function updateAuthStatus(isAuthenticated) {
-      const authStatusDiv = document.getElementById('authStatus');
-      const authStatusText = document.getElementById('authStatusText');
-      const logoutBtn = document.getElementById('logoutBtn');
-      
-      // Elements to enable/disable
-      const inputs = [
-        'manageUserId', 'userId', 'targetUrl', 'customPath',
-        'persistentContent', 'persistentFilename', 'textUserId', 'textCustomPath',
-        'qrcodeUrl'
-      ];
-      
-      const actionButtons = document.querySelectorAll('button:not(.auth-button):not(.logout-button)');
-
-      if (isAuthenticated && currentUser) {
-        // --- LOGGED IN STATE ---
-        authStatusDiv.className = 'auth-status authenticated';
-        authStatusText.textContent = 'Logged in as: ' + currentUser.userId;
-        logoutBtn.style.display = 'block';
-        
-        // Auto-fill User IDs
-        document.getElementById('manageUserId').value = currentUser.userId;
-        document.getElementById('userId').value = currentUser.userId;
-        document.getElementById('textUserId').value = currentUser.userId;
-        
-        // Enable inputs
-        inputs.forEach(id => {
-          const el = document.getElementById(id);
-          if(el) el.disabled = false;
-        });
-
-        // Enable action buttons
-        actionButtons.forEach(btn => btn.disabled = false);
-
-      } else {
-        // --- LOGGED OUT STATE ---
-        authStatusDiv.className = 'auth-status unauthenticated';
-        authStatusText.textContent = 'Not logged in. Please register or login.';
-        logoutBtn.style.display = 'none';
-        
-        // Clear User IDs
-        document.getElementById('manageUserId').value = '';
-        document.getElementById('userId').value = '';
-        document.getElementById('textUserId').value = '';
-        
-        // Disable inputs
-        inputs.forEach(id => {
-          const el = document.getElementById(id);
-          if(el) el.disabled = true;
-        });
-
-        // Disable action buttons
-        actionButtons.forEach(btn => btn.disabled = true);
-      }
-      
-      authStatusDiv.style.display = 'block';
-    }
-
-    // --- Auth Functions ---
-    async function registerUser() {
-      const userId = document.getElementById('registerUserId').value;
-      const email = document.getElementById('registerEmail').value;
-      const password = document.getElementById('registerPassword').value;
-      
-      if (!userId || !password) return alert('User ID and password are required');
-      
-      try {
-        const formData = new FormData();
-        formData.append('userId', userId);
-        if (email) formData.append('email', email);
-        formData.append('password', password);
-        
-        const response = await fetch('/auth/register', { method: 'POST', body: formData });
-        const data = await response.json();
-        
-        if (data.success) {
-          alert('Registration successful! Please login.');
-          document.getElementById('registerPassword').value = '';
-        } else {
-          alert('Registration failed: ' + data.error);
-        }
-      } catch (e) {
-        alert('System Error: ' + e.message);
-      }
-    }
-
-    async function loginUser() {
-      const userId = document.getElementById('loginUserId').value;
-      const password = document.getElementById('loginPassword').value;
-      
-      if (!userId || !password) return alert('Missing credentials');
-      
-      try {
-        const formData = new FormData();
-        formData.append('userId', userId);
-        formData.append('password', password);
-        
-        const response = await fetch('/auth/login', { method: 'POST', body: formData });
-        const data = await response.json();
-        
-        if (data.success) {
-          currentUser = { userId: userId };
-          localStorage.setItem('currentUser', JSON.stringify(currentUser));
-          updateAuthStatus(true);
-          alert('Login successful!');
-          document.getElementById('loginPassword').value = '';
-        } else {
-          alert('Login failed: ' + data.error);
-        }
-      } catch (e) {
-        alert('System Error: ' + e.message);
-      }
-    }
-
-    function logout() {
-      currentUser = null;
-      localStorage.removeItem('currentUser');
-      updateAuthStatus(false);
-      alert('Logged out.');
-    }
-
     // --- Core Features ---
-    async function createUserMapping() {
-      if (!currentUser) return alert('Please login first');
-      
+    async function createUrlMapping() {
       const targetUrl = document.getElementById('targetUrl').value;
-      const userId = document.getElementById('userId').value;
       const customPath = document.getElementById('customPath').value;
       
-      if (!targetUrl || !customPath) return alert('Missing fields');
+      if (!targetUrl || !customPath) return alert('Please fill in all fields');
       
       try {
         const formData = new FormData();
         formData.append('originalUrl', targetUrl);
-        formData.append('userId', userId);
         formData.append('customPath', customPath);
         
-        const response = await fetch('/api/create-user-mapping', { method: 'POST', body: formData });
+        const response = await fetch('/api/create-url-mapping', { method: 'POST', body: formData });
         const data = await response.json();
         
         if (data.success) {
@@ -650,31 +400,27 @@ function getHtmlPage() {
       }
     }
 
-    async function createPersistentText() {
-      if (!currentUser) return alert('Please login first');
-      
+    async function createTextMapping() {
       const content = document.getElementById('persistentContent').value;
       const filename = document.getElementById('persistentFilename').value;
-      const userId = document.getElementById('textUserId').value;
       const customPath = document.getElementById('textCustomPath').value;
       
-      if (!content || !filename || !customPath) return alert('Missing fields');
+      if (!content || !filename || !customPath) return alert('Please fill in all fields');
       
       try {
         const formData = new FormData();
         formData.append('content', content);
         formData.append('filename', filename);
-        formData.append('userId', userId);
         formData.append('customPath', customPath);
         
-        const response = await fetch('/api/create-persistent-text', { method: 'POST', body: formData });
+        const response = await fetch('/api/create-text-mapping', { method: 'POST', body: formData });
         const data = await response.json();
         
         if (data.success) {
           const resultDiv = document.getElementById('persistentTextResult');
           const link = document.getElementById('persistentTextUrl');
-          link.href = data.persistentUrl;
-          link.textContent = data.persistentUrl;
+          link.href = data.mappedUrl;
+          link.textContent = data.mappedUrl;
           resultDiv.classList.add('show');
           addQRCodeToElement('persistentTextUrl');
         } else {
@@ -685,73 +431,10 @@ function getHtmlPage() {
       }
     }
 
-    // --- Viewing & Deleting (The Fixed Part) ---
-    async function viewUserMappings() {
-      if (!currentUser) return alert('Please login first');
-      
-      try {
-        const response = await fetch(\`/api/user/\${encodeURIComponent(currentUser.userId)}/mappings\`);
-        const data = await response.json();
-        
-        if (data.success) {
-          const listDiv = document.getElementById('mappingsList');
-          listDiv.innerHTML = '';
-          
-          if (data.mappings.length === 0) {
-            listDiv.innerHTML = '<p>No mappings found.</p>';
-          } else {
-            data.mappings.forEach(mapping => {
-              const item = document.createElement('div');
-              item.className = 'mapping-item';
-              
-              // FIX: Using Template Literals with escaped backticks for Worker environment
-              item.innerHTML = \`
-                <div>
-                  <strong>Path:</strong> \${mapping.customPath}<br>
-                  <strong>Type:</strong> \${mapping.type}<br>
-                  <strong>Created:</strong> \${new Date(mapping.createdAt).toLocaleString()}<br>
-                  <div style="margin-top:5px;">
-                    <a href="/m/\${currentUser.userId}/\${mapping.customPath}" target="_blank" style="margin-right:10px;">Open</a>
-                    <button class="delete-btn" onclick="deleteMapping('\${currentUser.userId}', '\${mapping.customPath}')">Delete</button>
-                  </div>
-                </div>
-              \`;
-              listDiv.appendChild(item);
-            });
-          }
-          document.getElementById('userMappingsResult').classList.add('show');
-        } else {
-          alert('Error: ' + data.error);
-        }
-      } catch (e) {
-        alert('Fetch Error: ' + e.message);
-      }
-    }
-
-    async function deleteMapping(userId, path) {
-      if (!currentUser) return alert('Please login first');
-      if (!confirm(\`Are you sure you want to delete mapping: \${path}?\`)) return;
-      
-      try {
-        const response = await fetch(\`/api/user/\${encodeURIComponent(userId)}/mappings/\${encodeURIComponent(path)}/delete\`, { method: 'DELETE' });
-        const data = await response.json();
-        
-        if (data.success) {
-          alert('Deleted successfully');
-          viewUserMappings(); // Refresh list
-        } else {
-          alert('Error: ' + data.error);
-        }
-      } catch (e) {
-        alert('Delete Error: ' + e.message);
-      }
-    }
-
     // --- QR Code ---
-    function generateQRCode() {
-      if (!currentUser) return alert('Please login first');
+    async function generateQRCode() {
       const url = document.getElementById('qrcodeUrl').value;
-      if (!url) return alert('Enter URL');
+      if (!url) return alert('Please enter a URL');
       
       try {
         new URL(url); // Validate
@@ -789,18 +472,15 @@ function getHtmlPage() {
     }
 
     // --- Expose functions to window for HTML onclick attributes ---
-    window.registerUser = registerUser;
-    window.loginUser = loginUser;
-    window.logout = logout;
-    window.createUserMapping = createUserMapping;
-    window.createPersistentText = createPersistentText;
-    window.viewUserMappings = viewUserMappings;
-    window.deleteMapping = deleteMapping;
+    window.createUrlMapping = createUrlMapping;
+    window.createTextMapping = createTextMapping;
     window.generateQRCode = generateQRCode;
 
   </script>
 </body>
 </html>`;
+}
+}
 }
 
 // --- Helper Functions for API Logic ---
@@ -1612,6 +1292,1089 @@ function handleAccessControlPage() {
       'Content-Type': 'text/html',
     }
   });
+}
+
+// Updated API endpoints to remove user-specific restrictions
+else if (path.startsWith('/api/')) {
+  // Import and handle API routes dynamically
+  if (path === '/api/create-url-mapping') {
+    if (request.method === 'POST') {
+      return handleCreateUrlMapping(request, env);
+    } else if (request.method === 'OPTIONS') {
+      return handleCorsPreflight();
+    }
+  } else if (path === '/api/create-text-mapping') {
+    if (request.method === 'POST') {
+      return handleCreateTextMapping(request, env);
+    } else if (request.method === 'OPTIONS') {
+      return handleCorsPreflight();
+    }
+  } else if (path === '/api/list-mappings') {
+    if (request.method === 'GET') {
+      return handleListAllMappings(request, env);
+    } else if (request.method === 'OPTIONS') {
+      return handleCorsPreflight();
+    }
+  }
+}
+
+// Handle admin routes
+else if (path.startsWith('/admin/')) {
+  if (path === '/admin') {
+    if (request.method === 'GET') {
+      return handleAdminPage();
+    } else if (request.method === 'POST') {
+      return handleAdminAction(request, env);
+    } else if (request.method === 'OPTIONS') {
+      return handleCorsPreflight();
+    }
+  }
+}
+
+// Fallback to main page if no route matches
+else {
+  return new Response(getHtmlPage(), {
+    headers: {
+      'Content-Type': 'text/html',
+    }
+  });
+}
+
+// Helper functions for API endpoints
+async function handleCreateUrlMapping(request, env) {
+  if (request.method === 'OPTIONS') {
+    return handleCorsPreflight();
+  }
+  
+  if (request.method !== 'POST') {
+    return new Response('Method not allowed', { status: 405 });
+  }
+  
+  // Check if KV namespace is available
+  if (!env.URL_MAPPER_KV) {
+    return new Response(JSON.stringify({ 
+      error: 'KV namespace not configured. Please set up URL_MAPPER_KV in your environment.' 
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+  
+  try {
+    const formData = await request.formData();
+    const originalUrl = formData.get('originalUrl');
+    const customPath = formData.get('customPath');
+    
+    if (!originalUrl) {
+      return new Response(JSON.stringify({ error: 'Original URL is required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    if (!customPath) {
+      return new Response(JSON.stringify({ error: 'Custom path is required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Generate a default user ID if not provided (using a random identifier)
+    const userId = 'admin_' + Date.now().toString(36);
+    
+    // Validate the original URL
+    try {
+      new URL(originalUrl);
+    } catch (e) {
+      return new Response(JSON.stringify({ error: 'Invalid original URL' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Create the mapping key in the format: user:{userId}:path:{customPath}
+    const mappingKey = 'user:' + userId + ':path:' + customPath;
+    
+    // Check if this mapping already exists
+    const existingMapping = await env.URL_MAPPER_KV.get(mappingKey);
+    if (existingMapping) {
+      return new Response(JSON.stringify({ 
+        error: 'A mapping with this user ID and custom path already exists' 
+      }), {
+        status: 409, // Conflict
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Store the original URL in KV with the mapping key
+    const mappingData = {
+      originalUrl: originalUrl,
+      userId: userId,
+      customPath: customPath,
+      createdAt: new Date().toISOString(),
+      type: 'url_mapping'
+    };
+    
+    await env.URL_MAPPER_KV.put(mappingKey, JSON.stringify(mappingData));
+    
+    // Add this mapping to the general list of mappings
+    // First get the current list of mappings
+    const allMappingsListKey = 'all_mappings_list';
+    let allMappingsList = [];
+    const existingList = await env.URL_MAPPER_KV.get(allMappingsListKey);
+    if (existingList) {
+      allMappingsList = JSON.parse(existingList);
+    }
+    
+    // Add the new mapping to the list
+    allMappingsList.push({
+      mappingKey: mappingKey,
+      customPath: customPath,
+      createdAt: new Date().toISOString(),
+      type: 'url_mapping'
+    });
+    
+    // Update the general list of mappings
+    await env.URL_MAPPER_KV.put(allMappingsListKey, JSON.stringify(allMappingsList));
+    
+    // Derive the base URL from the request
+    const url = new URL(request.url);
+    const baseUrl = url.protocol + '//' + url.host;
+    
+    // Create the mapped URL
+    const mappedUrl = baseUrl + '/m/' + userId + '/' + customPath;
+    
+    return new Response(JSON.stringify({
+      success: true,
+      mappedUrl: mappedUrl,
+      mappingKey: mappingKey,
+      userId: userId,
+      customPath: customPath,
+      originalUrl: originalUrl,
+      message: 'URL mapping created successfully'
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
+  } catch (error) {
+    console.error('Error creating URL mapping:', error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+async function handleCreateTextMapping(request, env) {
+  if (request.method === 'OPTIONS') {
+    return handleCorsPreflight();
+  }
+  
+  if (request.method !== 'POST') {
+    return new Response('Method not allowed', { status: 405 });
+  }
+  
+  // Check if KV namespace is available
+  if (!env.URL_MAPPER_KV) {
+    return new Response(JSON.stringify({ 
+      error: 'KV namespace not configured. Please set up URL_MAPPER_KV in your environment.' 
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+  
+  try {
+    const formData = await request.formData();
+    const content = formData.get('content');
+    const filename = formData.get('filename') || 'text-content.txt';
+    const customPath = formData.get('customPath');
+    
+    if (!content) {
+      return new Response(JSON.stringify({ error: 'Content is required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    if (!customPath) {
+      return new Response(JSON.stringify({ error: 'Custom path is required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Generate a default user ID if not provided (using a random identifier)
+    const userId = 'admin_' + Date.now().toString(36);
+    
+    // Determine content type based on file extension
+    let contentType = 'text/plain';
+    if (filename.endsWith('.json')) {
+      contentType = 'application/json';
+    } else if (filename.endsWith('.js')) {
+      contentType = 'application/javascript';
+    } else if (filename.endsWith('.css')) {
+      contentType = 'text/css';
+    } else if (filename.endsWith('.html') || filename.endsWith('.htm')) {
+      contentType = 'text/html';
+    } else if (filename.endsWith('.xml')) {
+      contentType = 'application/xml';
+    }
+    
+    // Create the mapping key in the format: user:{userId}:path:{customPath}
+    const mappingKey = 'user:' + userId + ':path:' + customPath;
+    
+    // Check if this mapping already exists
+    const existingMapping = await env.URL_MAPPER_KV.get(mappingKey);
+    if (existingMapping) {
+      return new Response(JSON.stringify({ 
+        error: 'A mapping with this user ID and customPath already exists' 
+      }), {
+        status: 409, // Conflict
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Store the content and metadata in KV with the mapping key
+    const storedData = {
+      content: content,
+      filename: filename,
+      contentType: contentType,
+      userId: userId,
+      customPath: customPath,
+      createdAt: new Date().toISOString(),
+      type: 'text_content'
+    };
+    
+    await env.URL_MAPPER_KV.put(mappingKey, JSON.stringify(storedData));
+    
+    // Add this mapping to the general list of mappings
+    // First get the current list of mappings
+    const allMappingsListKey = 'all_mappings_list';
+    let allMappingsList = [];
+    const existingList = await env.URL_MAPPER_KV.get(allMappingsListKey);
+    if (existingList) {
+      allMappingsList = JSON.parse(existingList);
+    }
+    
+    // Add the new mapping to the list
+    allMappingsList.push({
+      mappingKey: mappingKey,
+      customPath: customPath,
+      createdAt: new Date().toISOString(),
+      type: 'text_content'
+    });
+    
+    // Update the general list of mappings
+    await env.URL_MAPPER_KV.put(allMappingsListKey, JSON.stringify(allMappingsList));
+    
+    // Derive the base URL from the request
+    const url = new URL(request.url);
+    const baseUrl = url.protocol + '//' + url.host;
+    
+    // Create the mapped URL
+    const mappedUrl = baseUrl + '/m/' + userId + '/' + customPath;
+    
+    return new Response(JSON.stringify({
+      success: true,
+      mappedUrl: mappedUrl,
+      mappingKey: mappingKey,
+      userId: userId,
+      customPath: customPath,
+      filename: filename,
+      contentType: contentType,
+      message: 'Text content mapping created successfully'
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
+  } catch (error) {
+    console.error('Error creating text content mapping:', error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+async function handleListAllMappings(request, env) {
+  if (request.method === 'OPTIONS') {
+    return handleCorsPreflight();
+  }
+  
+  try {
+    // Get the general list of mappings
+    const allMappingsListKey = 'all_mappings_list';
+    const allMappingsListJson = await env.URL_MAPPER_KV.get(allMappingsListKey);
+    
+    if (!allMappingsListJson) {
+      return new Response(JSON.stringify({
+        success: true,
+        mappings: [],
+        message: 'No mappings found'
+      }), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
+      });
+    }
+    
+    const allMappingsList = JSON.parse(allMappingsListJson);
+    
+    // Get detailed information for each mapping
+    const detailedMappings = [];
+    for (const mappingRef of allMappingsList) {
+      const mappingDataJson = await env.URL_MAPPER_KV.get(mappingRef.mappingKey);
+      if (mappingDataJson) {
+        const mappingData = JSON.parse(mappingDataJson);
+        
+        let contentPreview = '';
+        if (mappingData.type === 'url_mapping') {
+          // Limit the preview length
+          contentPreview = mappingData.originalUrl.length > 100 ? 
+            mappingData.originalUrl.substring(0, 100) + '...' : 
+            mappingData.originalUrl;
+        } else if (mappingData.type === 'text_content') {
+          // Limit the preview length
+          contentPreview = mappingData.content.length > 100 ? 
+            mappingData.content.substring(0, 100) + '...' : 
+            mappingData.content.substring(0, Math.min(100, mappingData.content.length));
+        }
+        
+        detailedMappings.push({
+          ...mappingData,
+          contentPreview: contentPreview,
+          mappingKey: mappingRef.mappingKey,
+          createdAt: mappingRef.createdAt
+        });
+      }
+    }
+    
+    return new Response(JSON.stringify({
+      success: true,
+      mappings: detailedMappings,
+      count: detailedMappings.length
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching all mappings:', error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+function handleAdminPage() {
+  const adminPage = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - URL Redirect</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+      color: #333;
+    }
+    .container {
+      background: white;
+      border-radius: 10px;
+      padding: 30px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #d9534f;
+      text-align: center;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input[type="text"], input[type="url"], textarea, select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    textarea {
+      height: 120px;
+      font-family: monospace;
+    }
+    button {
+      background-color: #d9534f;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-right: 5px;
+      margin-bottom: 5px;
+    }
+    button:hover {
+      background-color: #c9302c;
+    }
+    .secondary-btn {
+      background-color: #5bc0de;
+    }
+    .secondary-btn:hover {
+      background-color: #46b8da;
+    }
+    .success {
+      background: #d4edda;
+      border: 1px solid #c3e6c3;
+      color: #155724;
+      padding: 10px;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+    .error {
+      background: #f8d7da;
+      border: 1px solid #f5c6cb;
+      color: #721c24;
+      padding: 10px;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+    .mapping-list {
+      margin-top: 20px;
+    }
+    .mapping-item {
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+    }
+    .delete-btn {
+      background-color: #d9534f;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 3px;
+      cursor: pointer;
+      float: right;
+    }
+    .delete-btn:hover {
+      background-color: #c9302c;
+    }
+    .refresh-btn {
+      background-color: #5cb85c;
+    }
+    .refresh-btn:hover {
+      background-color: #4cae4c;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔐 Administrator Dashboard</h1>
+    <p>Welcome to the administrator dashboard. Here you can manage all mappings in the KV store.</p>
+    
+    <div id="adminResult"></div>
+    
+    <h2>Add New Mapping</h2>
+    <div class="form-group">
+      <label>Mapping Type:</label>
+      <select id="mappingType">
+        <option value="url_mapping">URL Mapping</option>
+        <option value="text_content">Text Content</option>
+      </select>
+    </div>
+    
+    <div id="urlMappingFields">
+      <div class="form-group">
+        <label>Target URL:</label>
+        <input type="url" id="targetUrl" placeholder="https://example.com/data.json">
+      </div>
+      <div class="form-group">
+        <label>Mapping Key (format: user:{userId}:path:{customPath}):</label>
+        <input type="text" id="mappingKey" placeholder="user:myuser:path:myendpoint">
+      </div>
+    </div>
+    
+    <div id="textContentFields" style="display:none;">
+      <div class="form-group">
+        <label>Content:</label>
+        <textarea id="textContent" placeholder="Enter text content here..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Filename:</label>
+        <input type="text" id="textFilename" value="config.txt" placeholder="e.g., config.json, script.js">
+      </div>
+      <div class="form-group">
+        <label>Content Type:</label>
+        <input type="text" id="contentType" value="text/plain" placeholder="e.g., application/json, text/javascript">
+      </div>
+      <div class="form-group">
+        <label>Mapping Key (format: user:{userId}:path:{customPath}):</label>
+        <input type="text" id="textMappingKey" placeholder="user:myuser:path:myendpoint">
+      </div>
+    </div>
+    
+    <button onclick="switchMappingType()">Switch Type</button>
+    <button onclick="createMapping()">Create Mapping</button>
+    
+    <h2>Manage Existing Mappings</h2>
+    <button class="refresh-btn" onclick="loadMappings()">Refresh Mappings List</button>
+    <button class="secondary-btn" onclick="deleteAllMappings()">Delete All Mappings</button>
+    
+    <div id="mappingsList" class="mapping-list">
+      <p>Loading mappings...</p>
+    </div>
+  </div>
+  
+  <script>
+    let currentMappingType = 'url_mapping';
+    
+    function switchMappingType() {
+      if (currentMappingType === 'url_mapping') {
+        document.getElementById('urlMappingFields').style.display = 'none';
+        document.getElementById('textContentFields').style.display = 'block';
+        currentMappingType = 'text_content';
+      } else {
+        document.getElementById('urlMappingFields').style.display = 'block';
+        document.getElementById('textContentFields').style.display = 'none';
+        currentMappingType = 'url_mapping';
+      }
+    }
+    
+    async function createMapping() {
+      try {
+        if (currentMappingType === 'url_mapping') {
+          const targetUrl = document.getElementById('targetUrl').value;
+          const mappingKey = document.getElementById('mappingKey').value;
+          
+          if (!targetUrl || !mappingKey) {
+            showMessage('Please fill in all fields', 'error');
+            return;
+          }
+          
+          // Validate URL
+          new URL(targetUrl);
+          
+          // Validate mapping key format
+          if (!isValidMappingKey(mappingKey)) {
+            showMessage('Invalid mapping key format. Use format: user:{userId}:path:{customPath}', 'error');
+            return;
+          }
+          
+          const mappingData = {
+            originalUrl: targetUrl,
+            userId: extractUserIdFromKey(mappingKey),
+            customPath: extractCustomPathFromKey(mappingKey),
+            createdAt: new Date().toISOString(),
+            type: 'url_mapping'
+          };
+          
+          const response = await fetch('/admin', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              action: 'create',
+              key: mappingKey,
+              value: JSON.stringify(mappingData),
+              type: currentMappingType
+            })
+          });
+          
+          const result = await response.json();
+          if (result.success) {
+            showMessage('Mapping created successfully!', 'success');
+            document.getElementById('targetUrl').value = '';
+            document.getElementById('mappingKey').value = '';
+            loadMappings(); // Refresh the list
+          } else {
+            showMessage('Error: ' + result.error, 'error');
+          }
+        } else { // text_content
+          const content = document.getElementById('textContent').value;
+          const filename = document.getElementById('textFilename').value;
+          const contentType = document.getElementById('contentType').value;
+          const mappingKey = document.getElementById('textMappingKey').value;
+          
+          if (!content || !filename || !contentType || !mappingKey) {
+            showMessage('Please fill in all fields', 'error');
+            return;
+          }
+          
+          // Validate mapping key format
+          if (!isValidMappingKey(mappingKey)) {
+            showMessage('Invalid mapping key format. Use format: user:{userId}:path:{customPath}', 'error');
+            return;
+          }
+          
+          const mappingData = {
+            content: content,
+            filename: filename,
+            contentType: contentType,
+            userId: extractUserIdFromKey(mappingKey),
+            customPath: extractCustomPathFromKey(mappingKey),
+            createdAt: new Date().toISOString(),
+            type: 'text_content'
+          };
+          
+          const response = await fetch('/admin', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              action: 'create',
+              key: mappingKey,
+              value: JSON.stringify(mappingData),
+              type: currentMappingType
+            })
+          });
+          
+          const result = await response.json();
+          if (result.success) {
+            showMessage('Text mapping created successfully!', 'success');
+            document.getElementById('textContent').value = '';
+            document.getElementById('textFilename').value = 'config.txt';
+            document.getElementById('contentType').value = 'text/plain';
+            document.getElementById('textMappingKey').value = '';
+            loadMappings(); // Refresh the list
+          } else {
+            showMessage('Error: ' + result.error, 'error');
+          }
+        }
+      } catch (error) {
+        showMessage('Error: ' + error.message, 'error');
+      }
+    }
+    
+    async function loadMappings() {
+      try {
+        const response = await fetch('/admin', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            action: 'list'
+          })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+          displayMappings(result.mappings);
+        } else {
+          showMessage('Error loading mappings: ' + result.error, 'error');
+        }
+      } catch (error) {
+        showMessage('Error: ' + error.message, 'error');
+      }
+    }
+    
+    function displayMappings(mappings) {
+      const container = document.getElementById('mappingsList');
+      
+      if (mappings.length === 0) {
+        container.innerHTML = '<p>No mappings found.</p>';
+        return;
+      }
+      
+      // Create a table to display mappings
+      let tableHTML = '<table><thead><tr><th>Key</th><th>Type</th><th>Details</th><th>Actions</th></tr></thead><tbody>';
+      
+      mappings.forEach(mapping => {
+        let details = '';
+        if (mapping.type === 'url_mapping') {
+          details = \`<strong>URL:</strong> \${mapping.originalUrl}<br><strong>User:</strong> \${mapping.userId}<br><strong>Path:</strong> \${mapping.customPath}\`;
+        } else if (mapping.type === 'text_content') {
+          const contentPreview = mapping.content.length > 100 ? 
+            mapping.content.substring(0, 100) + '...' : 
+            mapping.content;
+          details = \`<strong>Content:</strong> \${contentPreview}<br><strong>Filename:</strong> \${mapping.filename}<br><strong>Content-Type:</strong> \${mapping.contentType}\`;
+        } else {
+          details = \`<em>Unknown type: \${mapping.type}</em>\`;
+        }
+        
+        tableHTML += \`
+          <tr>
+            <td>\${mapping.key}</td>
+            <td>\${mapping.type}</td>
+            <td>\${details}</td>
+            <td><button class="delete-btn" onclick="deleteMapping('\${mapping.key}')">Delete</button></td>
+          </tr>
+        \`;
+      });
+      
+      tableHTML += '</tbody></table>';
+      container.innerHTML = tableHTML;
+    }
+    
+    async function deleteMapping(key) {
+      if (!confirm('Are you sure you want to delete mapping: ' + key + '?')) {
+        return;
+      }
+      
+      try {
+        const response = await fetch('/admin', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            action: 'delete',
+            key: key
+          })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+          showMessage('Mapping deleted successfully!', 'success');
+          loadMappings(); // Refresh the list
+        } else {
+          showMessage('Error: ' + result.error, 'error');
+        }
+      } catch (error) {
+        showMessage('Error: ' + error.message, 'error');
+      }
+    }
+    
+    async function deleteAllMappings() {
+      if (!confirm('Are you absolutely sure you want to delete ALL mappings? This cannot be undone!')) {
+        return;
+      }
+      
+      try {
+        const response = await fetch('/admin', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            action: 'delete_all'
+          })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+          showMessage('All mappings deleted successfully!', 'success');
+          loadMappings(); // Refresh the list
+        } else {
+          showMessage('Error: ' + result.error, 'error');
+        }
+      } catch (error) {
+        showMessage('Error: ' + error.message, 'error');
+      }
+    }
+    
+    function showMessage(text, type) {
+      const resultDiv = document.getElementById('adminResult');
+      resultDiv.innerHTML = '<div class="' + type + '">' + text + '</div>';
+      
+      // Auto-hide success messages after 5 seconds
+      if (type === 'success') {
+        setTimeout(() => {
+          resultDiv.innerHTML = '';
+        }, 5000);
+      }
+    }
+    
+    function isValidMappingKey(key) {
+      // Check if key matches pattern: user:{userId}:path:{customPath}
+      const regex = /^user:[a-zA-Z0-9_-]+:path:.+\$/;
+      return regex.test(key);
+    }
+    
+    function extractUserIdFromKey(key) {
+      const parts = key.split(':');
+      if (parts.length >= 2) {
+        return parts[1]; // user:{userId}:path:...
+      }
+      return 'unknown';
+    }
+    
+    function extractCustomPathFromKey(key) {
+      const parts = key.split(':path:');
+      if (parts.length >= 2) {
+        return parts[1]; // ...:path:{customPath}
+      }
+      return 'unknown';
+    }
+    
+    // Load mappings when page loads
+    window.onload = function() {
+      loadMappings();
+    };
+  </script>
+</body>
+</html>`;
+  
+  return new Response(adminPage, {
+    headers: {
+      'Content-Type': 'text/html',
+    }
+  });
+}
+
+async function handleAdminAction(request, env) {
+  if (request.method === 'OPTIONS') {
+    return handleCorsPreflight();
+  }
+  
+  if (request.method !== 'POST') {
+    return new Response('Method not allowed', { status: 405 });
+  }
+  
+  try {
+    const requestBody = await request.json();
+    const action = requestBody.action;
+    
+    if (action === 'create') {
+      // Create a new mapping
+      const key = requestBody.key;
+      const value = requestBody.value;
+      const type = requestBody.type;
+      
+      if (!key || !value || !type) {
+        return new Response(JSON.stringify({ error: 'Key, value, and type are required' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      
+      // Validate mapping key format
+      if (!isValidMappingKey(key)) {
+        return new Response(JSON.stringify({ error: 'Invalid mapping key format. Use format: user:{userId}:path:{customPath}' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      
+      // Check if this mapping already exists
+      const existingMapping = await env.URL_MAPPER_KV.get(key);
+      if (existingMapping) {
+        return new Response(JSON.stringify({ 
+          error: 'A mapping with this key already exists' 
+        }), {
+          status: 409, // Conflict
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      
+      // Store the mapping in KV
+      await env.URL_MAPPER_KV.put(key, value);
+      
+      // Add this mapping to the general list of mappings
+      const allMappingsListKey = 'all_mappings_list';
+      let allMappingsList = [];
+      const existingList = await env.URL_MAPPER_KV.get(allMappingsListKey);
+      if (existingList) {
+        allMappingsList = JSON.parse(existingList);
+      }
+      
+      // Add the new mapping to the list
+      const customPath = extractCustomPathFromKey(key);
+      allMappingsList.push({
+        mappingKey: key,
+        customPath: customPath,
+        createdAt: new Date().toISOString(),
+        type: type
+      });
+      
+      // Update the general list of mappings
+      await env.URL_MAPPER_KV.put(allMappingsListKey, JSON.stringify(allMappingsList));
+      
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Mapping created successfully',
+        key: key
+      }), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
+      });
+    } 
+    else if (action === 'list') {
+      // List all mappings
+      const allMappingsListKey = 'all_mappings_list';
+      const allMappingsListJson = await env.URL_MAPPER_KV.get(allMappingsListKey);
+      
+      if (!allMappingsListJson) {
+        return new Response(JSON.stringify({
+          success: true,
+          mappings: [],
+          message: 'No mappings found'
+        }), {
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          }
+        });
+      }
+      
+      const allMappingsList = JSON.parse(allMappingsListJson);
+      
+      // Get detailed information for each mapping
+      const detailedMappings = [];
+      for (const mappingRef of allMappingsList) {
+        const mappingDataJson = await env.URL_MAPPER_KV.get(mappingRef.mappingKey);
+        if (mappingDataJson) {
+          const mappingData = JSON.parse(mappingDataJson);
+          
+          detailedMappings.push({
+            ...mappingData,
+            key: mappingRef.mappingKey,
+            createdAt: mappingRef.createdAt
+          });
+        }
+      }
+      
+      return new Response(JSON.stringify({
+        success: true,
+        mappings: detailedMappings,
+        count: detailedMappings.length
+      }), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
+      });
+    }
+    else if (action === 'delete') {
+      // Delete a specific mapping
+      const key = requestBody.key;
+      
+      if (!key) {
+        return new Response(JSON.stringify({ error: 'Key is required' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      
+      // Check if the mapping exists
+      const existingMapping = await env.URL_MAPPER_KV.get(key);
+      if (!existingMapping) {
+        return new Response(JSON.stringify({ error: 'Mapping not found' }), {
+          status: 404,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      
+      // Delete the mapping
+      await env.URL_MAPPER_KV.delete(key);
+      
+      // Remove the mapping from the general list
+      const allMappingsListKey = 'all_mappings_list';
+      const allMappingsListJson = await env.URL_MAPPER_KV.get(allMappingsListKey);
+      
+      if (allMappingsListJson) {
+        let allMappingsList = JSON.parse(allMappingsListJson);
+        
+        // Filter out the mapping that was deleted
+        allMappingsList = allMappingsList.filter(item => item.mappingKey !== key);
+        
+        // Update the general list of mappings
+        await env.URL_MAPPER_KV.put(allMappingsListKey, JSON.stringify(allMappingsList));
+      }
+      
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Mapping deleted successfully'
+      }), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
+      });
+    }
+    else if (action === 'delete_all') {
+      // Delete all mappings
+      // Get the list of all mappings
+      const allMappingsListKey = 'all_mappings_list';
+      const allMappingsListJson = await env.URL_MAPPER_KV.get(allMappingsListKey);
+      
+      if (allMappingsListJson) {
+        const allMappingsList = JSON.parse(allMappingsListJson);
+        
+        // Delete each mapping
+        for (const mappingRef of allMappingsList) {
+          await env.URL_MAPPER_KV.delete(mappingRef.mappingKey);
+        }
+        
+        // Clear the mappings list
+        await env.URL_MAPPER_KV.put(allMappingsListKey, JSON.stringify([]));
+      }
+      
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'All mappings deleted successfully'
+      }), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
+      });
+    }
+    else {
+      return new Response(JSON.stringify({ error: 'Invalid action' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  } catch (error) {
+    console.error('Error in admin action:', error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+function isValidMappingKey(key) {
+  // Check if key matches pattern: user:{userId}:path:{customPath}
+  const regex = /^user:[a-zA-Z0-9_-]+:path:.+$/;
+  return regex.test(key);
+}
+
+function extractCustomPathFromKey(key) {
+  const parts = key.split(':path:');
+  if (parts.length >= 2) {
+    return parts[1]; // ...:path:{customPath}
+  }
+  return 'unknown';
 }
 
 function handleCorsPreflight() {
