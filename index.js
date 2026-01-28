@@ -1144,12 +1144,12 @@ function handleAdminPage() {
       }
       
       // 创建表格显示映射
-      let tableHTML = '<table><thead><tr><th>密钥</th><th>类型</th><th>详情</th><th>操作</th></tr></thead><tbody>';
+      let tableHTML = '<table><thead><tr><th>类型</th><th>路径</th><th>详情</th><th>操作</th></tr></thead><tbody>';
       
       mappings.forEach(mapping => {
         let details = '';
         if (mapping.type === 'url_mapping') {
-          details = \`<strong>URL：</strong> \${mapping.originalUrl}<br><strong>用户：</strong> \${mapping.userId}<br><strong>路径：</strong> \${mapping.customPath}\`;
+          details = \`<strong>URL：</strong> \${mapping.originalUrl}<br><strong>路径：</strong> \${mapping.customPath}\`;
         } else if (mapping.type === 'text_content') {
           const contentPreview = mapping.content.length > 100 ? 
             mapping.content.substring(0, 100) + '...' : 
@@ -1161,8 +1161,8 @@ function handleAdminPage() {
         
         tableHTML += \`
           <tr>
-            <td>\${mapping.key}</td>
             <td>\${mapping.type}</td>
+            <td>\${mapping.customPath}</td>
             <td>\${details}</td>
             <td><button class="delete-btn" onclick="deleteMapping('\${mapping.key}')">删除</button></td>
           </tr>
