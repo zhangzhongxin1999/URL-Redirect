@@ -193,7 +193,7 @@ function getHtmlPage() {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>通用内容代理</title>
+  <title>URL工具</title>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -295,7 +295,7 @@ function getHtmlPage() {
     </div>
     
     <div class="service-section">
-      <h2>1. 📄 URL 映射系统</h2>
+      <h2>1. 📄 URL 映射</h2>
       <div class="form-group">
         <label>目标 URL 地址：</label>
         <input type="url" id="targetUrl" placeholder="例如：https://example.com/data.json">
@@ -304,7 +304,7 @@ function getHtmlPage() {
         <label>自定义路径：</label>
         <input type="text" id="customPath" placeholder="例如：my-api-endpoint">
       </div>
-      <button onclick="createUrlMapping()">创建 URL 映射</button>
+      <button onclick="createUrlMapping()">生成</button>
       
       <div id="mappingResult" class="result">
         <p><strong>已创建映射：</strong></p>
@@ -327,7 +327,7 @@ function getHtmlPage() {
         <label>自定义路径：</label>
         <input type="text" id="textCustomPath" placeholder="例如：my-config, my-script">
       </div>
-      <button onclick="createTextMapping()">创建文本映射</button>
+      <button onclick="createTextMapping()">生成</button>
       
       <div id="persistentTextResult" class="result">
         <p><strong>文本映射地址：</strong></p>
@@ -341,7 +341,7 @@ function getHtmlPage() {
         <label>URL 地址：</label>
         <input type="url" id="qrcodeUrl" placeholder="请输入 URL">
       </div>
-      <button onclick="generateQRCode()">生成二维码</button>
+      <button onclick="generateQRCode()">生成</button>
       <div id="qrcodeResult" class="result">
         <div id="qrcodeContainer" style="display:flex; justify-content:center; margin:10px 0;"></div>
       </div>
@@ -816,7 +816,7 @@ function handleAdminPage() {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>管理员控制台 - URL 重定向</title>
+  <title>管理员控制台 - URL工具</title>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -984,7 +984,7 @@ function handleAdminPage() {
     </div>
     
     <button onclick="switchMappingType()">切换类型</button>
-    <button onclick="createMapping()">创建映射</button>
+    <button onclick="createMapping()">生成</button>
     
     <h2>管理现有映射</h2>
     <button class="refresh-btn" onclick="loadMappings()">刷新映射列表</button>
@@ -1511,6 +1511,49 @@ function extractCustomPathFromKey(key) {
     return parts[1]; // ...:path:{customPath}
   }
   return 'unknown';
+}
+
+async function handleQrCodeGeneration(request) {
+  // Parse the URL parameters
+  const url = new URL(request.url);
+  const targetUrl = url.searchParams.get('url');
+  
+  if (!targetUrl) {
+    return new Response('URL parameter is required', { status: 400 });
+  }
+  
+  try {
+    // Validate the URL
+    new URL(targetUrl);
+    
+    // Generate QR code using an external service
+    // Using a QR code API service
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(targetUrl)}`;
+    
+    // Fetch the QR code image from the external service
+    const qrResponse = await fetch(qrApiUrl);
+    
+    if (!qrResponse.ok) {
+      throw new Error(`QR code service error: ${qrResponse.status}`);
+    }
+    
+    // Get the image buffer
+    const imageBuffer = await qrResponse.arrayBuffer();
+    
+    // Return the image
+    return new Response(imageBuffer, {
+      headers: {
+        'Content-Type': 'image/png',
+        'Cache-Control': 'public, max-age=3600',
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
+  } catch (error) {
+    return new Response(`Error generating QR code: ${error.message}`, { 
+      status: 500,
+      headers: { 'Content-Type': 'text/plain' }
+    });
+  }
 }
 
 function handleCorsPreflight() {
