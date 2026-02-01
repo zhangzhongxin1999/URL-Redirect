@@ -1,209 +1,53 @@
-# Universal Content Proxy with User-defined Mapping
+# 🔄 URL-Redirect & Content Mapper
 
-一个Cloudflare Pages应用程序，允许用户定义自己的URL映射，将任意URL或文本内容映射到自定义路径，实现内容代理和访问受限内容的功能。
+一个基于 Cloudflare Workers + KV 存储的轻量级、功能强大的 URL 管理与内容托管工具。
 
-## 功能
+## ✨ 核心功能
 
-这个服务解决了多个需求：
-1. 访问被阻止或受限的外部内容（例如GitHub Gist、API端点等）
-2. 为下载的文件指定自定义文件名
-3. 直接存储和分发文本内容
-4. 创建用户自定义的URL映射
-5. 为生成的URL提供二维码
-6. 用户管理：查看和删除用户创建的映射
-7. 用户认证：注册和登录功能
+- **🔗 高级 URL 映射**：不仅仅是简单的 302 跳转。支持将目标 URL 映射到自定义路径，并作为透明代理返回内容，自动处理文件下载。
+- **📄 文本内容托管**：直接托管文本、JSON、脚本或 HTML 内容，支持自定义文件名和 Mime-Type。
+- **📱 实时二维码生成**：为生成的映射链接一键生成二维码。
+- **🔐 管理员控制台**：内置可视化管理界面 `/admin`，支持对所有 KV 映射进行增删改查。
+- **🛠️ 安全认证**：支持管理密码保护，确保 API 和控制台的安全。
 
-## 功能特性
+## 🚀 快速部署
 
-- 绕过内容访问限制
-- 保持原始内容类型头信息
-- 包括缓存以提高性能
-- 支持所有文件类型（JavaScript、CSS、JSON、文本等）
-- 简单的URL替换模式
-- 通过查询参数支持自定义文件名
-- 用户定义的映射系统（使用KV存储）
-- 文本内容存储和检索
-- 二维码生成功能
-- 用户管理：查看和删除用户创建的映射
-- 用户认证：注册和登录功能
-- **新增：** 安全访问控制
+1. **克隆项目**：
+   ```bash
+   git clone https://github.com/zhangzhongxin1999/URL-Redirect.git
+   cd URL-Redirect
+   ```
 
-## 工作原理
+2. **创建 KV 命名空间**：
+   在 Cloudflare Dashboard 中创建一个 KV 命名空间，并获取其 `ID`。
 
-该服务提供五个主要功能：
+3. **配置 `wrangler.toml`**：
+   将你的 KV ID 填入配置文件：
+   ```toml
+   [[kv_namespaces]]
+   binding = "URL_MAPPER_KV"
+   id = "你的_KV_ID"
+   ```
 
-### 1. 用户认证系统
-使用Cloudflare KV存储用户凭证：
-- 注册端点：`/auth/register` - 创建新用户账户
-- 登录端点：`/auth/login` - 验证用户凭证
+4. **部署到 Cloudflare**：
+   ```bash
+   wrangler deploy
+   ```
 
-### 2. 统一用户映射系统
-使用Cloudflare KV存储维护用户定义的URL映射：
-- 端点：`/m/{userId}/{customPath}` - 从存储的原始URL或文本内容检索
-- API：`/api/create-user-mapping` - 创建新的用户URL映射
-- API：`/api/create-persistent-text` - 创建新的用户文本内容映射
+## 📖 路径规范
 
-### 3. 用户管理
-管理用户创建的映射：
-- API：`/api/user/{userId}/mappings` - 获取用户的所有映射
-- API：`/api/user/{userId}/mappings/{customPath}/delete` - 删除用户的特定映射
+- **用户访问路径**：https://your-worker.dev/m/{userId}/{customPath}
+- **管理后台**：https://your-worker.dev/admin
+- **API 接口**：
+    - POST /api/create-url-mapping
+    - POST /api/create-text-mapping
+    - GET /api/list-mappings
 
-### 4. 二维码生成器
-为任意URL生成二维码图片：
-- 端点：`/qrcode/generate?url={target-url}` - 生成目标URL的二维码
-- 方便移动设备扫描访问
+## 🛡️ 环境配置
 
-## 使用方法
+可以在 Cloudflare 后台设置以下环境变量：
+- ADMIN_PASSWORD：设置后，访问 /admin 和调用管理 API 将需要 Bearer Token 验证。
 
-### 1. 用户注册和登录
+## 📄 许可证
 
-#### 注册新用户
-```
-POST 请求到 /auth/register
-表单数据：
-- userId: 期望的用户ID（只能包含字母、数字、连字符和下划线）
-- email: 邮箱地址（可选）
-- password: 密码
-```
-
-#### 用户登录
-```
-POST 请求到 /auth/login
-表单数据：
-- userId: 用户ID
-- password: 密码
-```
-
-### 2. 创建用户URL映射
-
-#### 通过API创建映射
-```
-POST 到 /api/create-user-mapping
-表单数据：
-- originalUrl: 要映射的原始URL（如 https://example.com/data.json 或 https://gist.githubusercontent.com/...）
-- userId: 你的用户ID（如 myuser123）
-- customPath: 自定义路径（如 my-api-endpoint 或 my-gist-file）
-```
-
-#### 访问映射的内容
-```
-https://{your-site}.pages.dev/m/{userId}/{customPath}
-```
-
-#### 示例
-```
-# 映射一个外部API
-原始URL: https://api.example.com/data.json
-用户ID: myuser123
-自定义路径: weather-data
-
-访问URL: https://your-site.pages.dev/m/myuser123/weather-data
-```
-
-### 3. 创建用户文本内容映射
-
-#### 通过API创建文本内容
-```
-POST 到 /api/create-persistent-text
-表单数据：
-- content: 要存储的文本内容
-- filename: 文件名（如 config.json）
-- userId: 你的用户ID（如 myuser123）
-- customPath: 自定义路径（如 my-config 或 my-script）
-```
-
-#### 访问文本内容
-```
-https://{your-site}.pages.dev/m/{userId}/{customPath}
-```
-
-### 4. 用户管理
-
-#### 查看用户的所有映射
-```
-GET 请求到 /api/user/{userId}/mappings
-```
-
-#### 删除用户的特定映射
-```
-DELETE 请求到 /api/user/{userId}/mappings/{customPath}/delete
-```
-
-### 5. 二维码生成器
-
-#### 生成二维码
-```
-https://{your-site}.pages.dev/qrcode/generate?url={target-url}
-```
-
-#### 示例
-```
-https://your-site.pages.dev/qrcode/generate?url=https%3A%2F%2Fexample.com%2Fdata.json
-```
-
-## 部署
-
-### 方法1：连接你的GitHub仓库（推荐）
-
-1. Fork此仓库到你的GitHub账户
-2. 前往 [Cloudflare Dashboard](https://dash.cloudflare.com/) → Pages
-3. 点击"创建项目" → "连接到Git"
-4. 选择你的forked仓库
-5. 在"构建配置"中设置：
-   - 框架预设：`None`
-   - 构建命令：`echo "Build not needed for static site"`
-   - 构建输出目录：`./`
-6. **重要：** 为持久化功能设置Cloudflare KV命名空间：
-   - 前往 Workers & Pages → KV → 创建命名空间
-   - 命名为 "URL_MAPPER_KV"（用于所有映射存储）
-   - 在Pages设置 → 环境变量中添加：
-     - 键：`URL_MAPPER_KV`，值：你的KV命名空间ID
-7. 点击"保存并部署"
-
-### 方法2：直接上传
-
-1. 下载此仓库作为ZIP文件
-2. 前往 [Cloudflare Dashboard](https://dash.cloudflare.com/) → Pages
-3. 点击"创建项目" → "上传资产"
-4. 上传此仓库的内容
-5. 配置KV命名空间，如上所述
-6. 点击"部署"
-
-## 安全功能
-
-要保护你的实例，请访问 `/admin/access-control` 设置身份验证：
-
-1. 默认凭据：用户名 `admin`，密码 `password`
-2. 登录后可更改默认凭据
-3. 建议在生产环境中使用强密码
-
-## 技术细节
-
-- 使用Cloudflare Pages Functions创建动态路由
-- 保留原始HTTP头信息，包括内容类型
-- 设置Content-Disposition头以强制使用自定义文件名下载
-- 实施缓存策略：
-  - 所有映射：无缓存（确保内容的新鲜度）
-- 支持基于文件扩展名的多种内容类型
-- 持久化存储选项使用Cloudflare KV
-- 为调试记录请求
-
-## 安全注意事项
-
-- 这是一个没有身份验证的简单代理服务
-- 所有请求都会未经修改地转发
-- 如需生产使用，请实施额外的安全措施
-- 请注意并遵守目标服务器的服务条款
-- 验证URL以防止恶意请求
-- 需要正确配置KV命名空间以进行持久化映射
-- 访问 `/admin/access-control` 设置身份验证以保护服务
-
-## 限制
-
-- 未实施速率限制（如有需要可考虑添加）
-- 依赖Cloudflare的网络和目标服务器的可用性
-- 持久化功能需要Cloudflare KV，这有其自身的限制和成本
-
-## 许可证
-
-MIT
+MIT License
